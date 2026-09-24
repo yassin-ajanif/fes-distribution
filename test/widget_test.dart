@@ -5,6 +5,16 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:fes_distribution/db/app_database.dart';
 import 'package:fes_distribution/ui/app/app.dart';
 
+Future<void> _tapSection(WidgetTester tester, String title) async {
+  await tester.tap(find.text(title.toUpperCase()));
+  await tester.pumpAndSettle();
+}
+
+Finder _menuText(String text, {required bool mobile}) {
+  final menuRoot = mobile ? find.byType(Drawer) : find.byType(ListView).first;
+  return find.descendant(of: menuRoot, matching: find.text(text));
+}
+
 void main() {
   testWidgets('mobile shell shows drawer menu button', (tester) async {
     final database = AppDatabase(NativeDatabase.memory());
@@ -24,9 +34,22 @@ void main() {
     await tester.tap(find.byIcon(Icons.menu));
     await tester.pumpAndSettle();
 
-    expect(find.text('Vendeurs'), findsWidgets);
-    expect(find.text('Bons de charge'), findsOneWidget);
-    expect(find.text('Bons de décharge'), findsOneWidget);
+    expect(_menuText('Vendeurs', mobile: true), findsOneWidget);
+    expect(_menuText('Bons de charge', mobile: true), findsOneWidget);
+    expect(_menuText('Bons de livraison', mobile: true), findsNothing);
+
+    await _tapSection(tester, 'Ventes');
+    expect(_menuText('Bons de livraison', mobile: true), findsOneWidget);
+    expect(_menuText('Vendeurs', mobile: true), findsNothing);
+
+    await _tapSection(tester, 'Achats');
+    expect(_menuText('Bons réception', mobile: true), findsOneWidget);
+    expect(_menuText('Bons de livraison', mobile: true), findsNothing);
+
+    await _tapSection(tester, 'Stock & administration');
+    expect(_menuText('Stock', mobile: true), findsOneWidget);
+    expect(_menuText('Paramètres', mobile: true), findsOneWidget);
+    expect(_menuText('Bons réception', mobile: true), findsNothing);
   });
 
   testWidgets('desktop shell shows permanent sidebar', (tester) async {
@@ -42,7 +65,13 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('DISTRIBUTION'), findsOneWidget);
-    expect(find.text('Bons de charge'), findsOneWidget);
+    expect(_menuText('Bons de charge', mobile: false), findsOneWidget);
+    expect(_menuText('Bons de livraison', mobile: false), findsNothing);
     expect(find.byType(Drawer), findsNothing);
+
+    await _tapSection(tester, 'Stock & administration');
+    expect(_menuText('Stock', mobile: false), findsOneWidget);
+    expect(_menuText('Paramètres', mobile: false), findsOneWidget);
+    expect(_menuText('Bons de charge', mobile: false), findsNothing);
   });
 }

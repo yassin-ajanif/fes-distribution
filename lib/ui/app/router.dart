@@ -6,9 +6,16 @@ import 'package:fes_distribution/ui/personnel/bon_charge_list_page.dart';
 import 'package:fes_distribution/ui/personnel/bon_decharge_edit_page.dart';
 import 'package:fes_distribution/ui/personnel/bon_decharge_list_page.dart';
 import 'package:fes_distribution/ui/personnel/vendeur_detail_page.dart';
+import 'package:fes_distribution/ui/avoir_fournisseur/avoir_fournisseur_list_page.dart';
 import 'package:fes_distribution/ui/facturation/avoir_list_page.dart';
 import 'package:fes_distribution/ui/facturation/facture_list_page.dart';
+import 'package:fes_distribution/ui/facture_fournisseur/facture_fournisseur_list_page.dart';
 import 'package:fes_distribution/ui/livraison/bl_list_page.dart';
+import 'package:fes_distribution/ui/reception/br_list_page.dart';
+import 'package:fes_distribution/ui/reporting/reports_page.dart';
+import 'package:fes_distribution/ui/settings/settings_page.dart';
+import 'package:fes_distribution/ui/stock/produits_page.dart';
+import 'package:fes_distribution/ui/stock/stock_page.dart';
 import 'package:fes_distribution/ui/personnel/vendeurs_page.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -85,6 +92,66 @@ GoRouter createRouter() {
                 },
               ),
             ],
+          ),
+          GoRoute(
+            path: '/ventes/bons-livraison',
+            pageBuilder: (context, state) => const NoTransitionPage(
+              child: BlListPage(),
+            ),
+          ),
+          GoRoute(
+            path: '/ventes/factures',
+            pageBuilder: (context, state) => const NoTransitionPage(
+              child: FactureListPage(),
+            ),
+          ),
+          GoRoute(
+            path: '/ventes/avoirs',
+            pageBuilder: (context, state) => const NoTransitionPage(
+              child: AvoirListPage(),
+            ),
+          ),
+          GoRoute(
+            path: '/achats/bons-reception',
+            pageBuilder: (context, state) => const NoTransitionPage(
+              child: BrListPage(),
+            ),
+          ),
+          GoRoute(
+            path: '/achats/factures-fournisseur',
+            pageBuilder: (context, state) => const NoTransitionPage(
+              child: FactureFournisseurListPage(),
+            ),
+          ),
+          GoRoute(
+            path: '/achats/avoirs-fournisseur',
+            pageBuilder: (context, state) => const NoTransitionPage(
+              child: AvoirFournisseurListPage(),
+            ),
+          ),
+          GoRoute(
+            path: '/stock/produits',
+            pageBuilder: (context, state) => const NoTransitionPage(
+              child: ProduitsPage(),
+            ),
+          ),
+          GoRoute(
+            path: '/stock',
+            pageBuilder: (context, state) => const NoTransitionPage(
+              child: StockPage(),
+            ),
+          ),
+          GoRoute(
+            path: '/admin/rapports',
+            pageBuilder: (context, state) => const NoTransitionPage(
+              child: ReportsPage(),
+            ),
+          ),
+          GoRoute(
+            path: '/admin/parametres',
+            pageBuilder: (context, state) => const NoTransitionPage(
+              child: SettingsPage(),
+            ),
           ),
         ],
       ),
