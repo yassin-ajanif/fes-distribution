@@ -66,7 +66,7 @@ Before implementing a feature, read the matching C# module:
 | `business/services/*` | `Modules/*/Services/*Service.cs` |
 | `business/workflows/*` | `Modules/*/Services/*WorkflowService.cs` |
 | `ui/*` | `Modules/*/Views/*`, `Modules/*/ViewModels/*` |
-| `db/tables/*` | `Shared/Database/AppDbContext.cs`, `Modules/*/Models/*` |
+| `db/entities/*` | `Shared/Database/AppDbContext.cs`, `Modules/*/Models/*` |
 
 Key workflow references:
 
@@ -89,7 +89,7 @@ When unsure about behavior, **read the Peinture source first** — do not guess.
 ## Database rules
 
 - Table names, columns, FKs, and enums must match `docs/database-design.md`
-- One Drift table file per SQLite table under `db/tables/`
+- One Drift table file per SQLite table under `db/entities/`
 - Schema changes require a migration in `db/migrations/` and a `schemaVersion` bump
 - `StockActuel` on products is computed — do not persist it
 

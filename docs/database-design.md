@@ -438,7 +438,7 @@ Does **not** use `BaseEntity`. Singleton-style configuration row.
 
 ## Drift Mapping Notes
 
-- One Drift table file per SQLite table under `db/tables/`.
+- One Drift table file per SQLite table under `db/entities/`.
 - Use `schemaVersion` + `MigrationStrategy` in `app_database.dart` for schema changes.
 - Business models in `business/models/` map to/from Drift row classes via `business/mappers/`.
 - Multi-table operations (validate BL, bon charge, payments) must run inside Drift transactions.

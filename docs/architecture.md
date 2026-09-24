@@ -165,7 +165,7 @@ lib/
     ├── migrations/
     │   ├── migration_v1.dart
     │   └── migration_v2.dart
-    └── tables/
+    └── entities/
         ├── users.dart
         ├── tiers.dart
         ├── categories.dart
@@ -268,7 +268,7 @@ Add a small UI model inside a feature folder only when a list screen needs extra
 
 | Concern | Choice |
 |---------|--------|
-| UI framework | Flutter (desktop) |
+| UI framework | Flutter (mobile-first; Android + desktop) |
 | State management | Riverpod |
 | Routing | go_router |
 | Local database | Drift + SQLite |
@@ -423,7 +423,7 @@ lib/
     ├── app_database.dart
     ├── connection.dart
     ├── migrations/
-    └── tables/
+    └── entities/
 ```
 
 | Phase | Modules |
@@ -446,7 +446,7 @@ lib/
 | Where does "can I validate this BL?" go? | `business/workflows/` |
 | Where does save/load logic go? | `business/services/` |
 | Where does a `BonLivraison` class go? | `business/models/` |
-| Where does a Drift table go? | `db/tables/` |
+| Where does a Drift table go? | `db/entities/` |
 | Where does a migration go? | `db/migrations/` |
 | When to add a UI list model? | Only when the screen needs joined/display-only fields |
 
