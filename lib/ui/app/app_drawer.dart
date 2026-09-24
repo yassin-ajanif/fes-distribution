@@ -11,7 +11,10 @@ class AppDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final drawerWidth = MediaQuery.sizeOf(context).width * 0.7;
+
     return Drawer(
+      width: drawerWidth,
       child: AppMenuPanel(
         currentLocation: currentLocation,
         onNavigate: (route) {
