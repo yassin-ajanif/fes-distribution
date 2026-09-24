@@ -1,0 +1,102 @@
+---
+description: Enforce FesDistribution architecture, DB schema, and Peinture distribution business-logic reference
+alwaysApply: true
+---
+
+# FesDistribution — Project Standards
+
+This Flutter project is a clone of **Peinture distribution**. Follow the docs and reference source strictly.
+
+## Required reading (before structural or feature work)
+
+1. `docs/architecture.md` — folder layout, layers, services vs workflows
+2. `docs/database-design.md` — tables, relationships, enums, document flows
+3. `docs/flutter-setup.md` — Flutter dependencies, Drift setup, bootstrap, roadmap
+
+If code conflicts with these docs, **update code to match the docs** (or propose a doc update with clear reason).
+
+## Flutter setup reference
+
+Use **TangerAppAndroid** for Flutter project bootstrap:
+
+`C:\Users\yassin\Desktop\TangerAppAndroid`
+
+Copy from Tanger: `pubspec.yaml` Drift deps, `app_database.dart` pattern, `main.dart` bootstrap, run/build_runner commands.
+
+Do **not** copy Tanger's folder layout or repository pattern — follow `docs/architecture.md` instead.
+
+## Architecture (mandatory)
+
+Use **only 3 top-level folders** under `lib/`:
+
+```text
+ui/        → pages, widgets, routing, theme
+business/  → models, enums, services, workflows, mappers
+db/        → Drift tables, app_database, migrations, connection
+```
+
+**Data flow:** `ui → business (service/workflow) → db (Drift)`
+
+### Do
+
+- Put CRUD/query logic in `business/services/`
+- Put multi-step document/stock/payment rules in `business/workflows/`
+- Map Drift rows ↔ business models in `business/mappers/`
+- Run multi-table updates inside Drift transactions (in workflows)
+- Use Drift + SQLite for persistence
+
+### Do not
+
+- Add a `repositories/` layer
+- Add a global `dto/` layer (optional UI list models inside `ui/` only when needed)
+- Put business rules or Drift code in `ui/`
+- Put Flutter widgets in `business/` or `db/`
+- Invent a new schema — match `docs/database-design.md`
+
+## Business logic reference (source of truth)
+
+Clone behavior from:
+
+`C:\Users\yassin\Desktop\Peinture distribution`
+
+Before implementing a feature, read the matching C# module:
+
+| Flutter area | Peinture reference |
+|--------------|-------------------|
+| `business/services/*` | `Modules/*/Services/*Service.cs` |
+| `business/workflows/*` | `Modules/*/Services/*WorkflowService.cs` |
+| `ui/*` | `Modules/*/Views/*`, `Modules/*/ViewModels/*` |
+| `db/tables/*` | `Shared/Database/AppDbContext.cs`, `Modules/*/Models/*` |
+
+Key workflow references:
+
+- `Modules/Livraison/Services/BonLivraisonWorkflowService.cs`
+- `Modules/Stock/Services/StockMovementService.cs`
+- `Modules/Facturation/Services/AvoirWorkflowService.cs`
+- `Modules/Reception/Services/BonReceptionWorkflowService.cs`
+- `Modules/FactureFournisseur/Services/FactureFournisseurWorkflowService.cs`
+- `Modules/Personnel/Services/VendeurCaisseService.cs`
+
+Port **rules and flows**, not C# syntax literally. Preserve:
+
+- document workflows (Devis → BC → BL → Facture, BC → BR → Facture fournisseur)
+- stock location transfers (depot ↔ vendor virtual stock)
+- payment rules (client payments on BL; supplier payments on facture fournisseur)
+- validations, totals, stock checks, and transaction boundaries
+
+When unsure about behavior, **read the Peinture source first** — do not guess.
+
+## Database rules
+
+- Table names, columns, FKs, and enums must match `docs/database-design.md`
+- One Drift table file per SQLite table under `db/tables/`
+- Schema changes require a migration in `db/migrations/` and a `schemaVersion` bump
+- `StockActuel` on products is computed — do not persist it
+
+## Implementation checklist
+
+1. Check `docs/architecture.md` for file placement
+2. Check `docs/database-design.md` for schema
+3. Read the corresponding Peinture distribution service/workflow/viewmodel
+4. Implement in `business/` first, then wire `ui/`
+5. Keep changes scoped to the requested module
