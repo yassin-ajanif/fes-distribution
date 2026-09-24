@@ -8,6 +8,7 @@ import 'package:fes_distribution/ui/common/loading_view.dart';
 import 'package:fes_distribution/ui/common/shell_app_bar.dart';
 import 'package:fes_distribution/ui/common/responsive.dart';
 import 'package:fes_distribution/ui/providers/service_providers.dart';
+import 'package:fes_distribution/ui/l10n/strings_scope.dart';
 import 'package:fes_distribution/ui/theme/app_theme.dart';
 
 class BonChargeListPage extends ConsumerStatefulWidget {
@@ -55,16 +56,17 @@ class _BonChargeListPageState extends ConsumerState<BonChargeListPage> {
     } catch (e) {
       if (mounted) {
         setState(() => _loading = false);
-        await showErrorDialog(context, title: 'Bon charge', message: '$e');
+        await showErrorDialog(context, title: context.s.menuBonCharge, message: '$e');
       }
     }
   }
 
   Future<void> _deleteItem(BonChargeListItem item) async {
+    final s = context.s;
     final ok = await showConfirmDialog(
       context,
-      title: 'Bon charge',
-      message: 'Supprimer ${item.bon.numero} ?',
+      title: s.menuBonCharge,
+      message: s.deleteBonConfirm(item.bon.numero),
     );
     if (!ok) return;
 
@@ -76,18 +78,19 @@ class _BonChargeListPageState extends ConsumerState<BonChargeListPage> {
     } catch (e) {
       if (mounted) {
         setState(() => _loading = false);
-        await showErrorDialog(context, title: 'Bon charge', message: '$e');
+        await showErrorDialog(context, title: context.s.menuBonCharge, message: '$e');
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final s = context.s;
     final mobile = isMobile(context);
 
     return Scaffold(
       appBar: ShellAppBar(
-        title: 'Bons de charge',
+        title: s.menuBonCharge,
         actions: [
           IconButton(icon: const Icon(Icons.refresh), onPressed: _load),
         ],
@@ -95,7 +98,7 @@ class _BonChargeListPageState extends ConsumerState<BonChargeListPage> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.push('/distribution/bons-charge/new'),
         icon: const Icon(Icons.add),
-        label: const Text('Nouveau'),
+        label: Text(s.actionNew),
       ),
       body: Column(
         children: [
@@ -104,7 +107,7 @@ class _BonChargeListPageState extends ConsumerState<BonChargeListPage> {
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: 'Rechercher numéro, vendeur, note…',
+                hintText: s.searchBon,
                 prefixIcon: const Icon(Icons.search),
                 suffixIcon: IconButton(
                   icon: const Icon(Icons.search),
@@ -120,7 +123,7 @@ class _BonChargeListPageState extends ConsumerState<BonChargeListPage> {
                 : _items.isEmpty
                     ? Center(
                         child: Text(
-                          'Aucun bon de charge.',
+                          s.emptyBonCharge,
                           style: TextStyle(color: AppColors.muted),
                         ),
                       )

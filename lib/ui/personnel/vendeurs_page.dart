@@ -7,6 +7,7 @@ import 'package:fes_distribution/ui/common/confirm_dialog.dart';
 import 'package:fes_distribution/ui/common/loading_view.dart';
 import 'package:fes_distribution/ui/common/shell_app_bar.dart';
 import 'package:fes_distribution/ui/providers/service_providers.dart';
+import 'package:fes_distribution/ui/l10n/strings_scope.dart';
 import 'package:fes_distribution/ui/theme/app_theme.dart';
 
 class VendeursPage extends ConsumerStatefulWidget {
@@ -47,16 +48,17 @@ class _VendeursPageState extends ConsumerState<VendeursPage> {
     } catch (e) {
       if (mounted) {
         setState(() => _loading = false);
-        await showErrorDialog(context, title: 'Vendeurs', message: '$e');
+        await showErrorDialog(context, title: context.s.menuVendeurs, message: '$e');
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final s = context.s;
     return Scaffold(
       appBar: ShellAppBar(
-        title: 'Vendeurs',
+        title: s.menuVendeurs,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -67,7 +69,7 @@ class _VendeursPageState extends ConsumerState<VendeursPage> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.push('/distribution/vendeurs/new'),
         icon: const Icon(Icons.person_add),
-        label: const Text('Nouveau'),
+        label: Text(s.actionNew),
       ),
       body: Column(
         children: [
@@ -76,7 +78,7 @@ class _VendeursPageState extends ConsumerState<VendeursPage> {
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: 'Rechercher un vendeur…',
+                hintText: s.searchVendeur,
                 prefixIcon: const Icon(Icons.search),
                 suffixIcon: IconButton(
                   icon: const Icon(Icons.clear),
@@ -91,11 +93,11 @@ class _VendeursPageState extends ConsumerState<VendeursPage> {
           ),
           Expanded(
             child: _loading
-                ? const LoadingView(message: 'Chargement…')
+                ? LoadingView(message: s.loading)
                 : _vendeurs.isEmpty
                     ? Center(
                         child: Text(
-                          'Aucun vendeur trouvé.',
+                          s.emptyVendeurs,
                           style: TextStyle(color: AppColors.muted),
                         ),
                       )

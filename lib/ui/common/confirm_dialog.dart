@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:fes_distribution/ui/l10n/strings_scope.dart';
 
 Future<bool> showConfirmDialog(
   BuildContext context, {
   required String title,
   required String message,
-  String confirmLabel = 'Confirmer',
-  String cancelLabel = 'Annuler',
+  String? confirmLabel,
+  String? cancelLabel,
 }) async {
+  final s = context.s;
   final result = await showDialog<bool>(
     context: context,
     builder: (ctx) => AlertDialog(
@@ -15,11 +17,11 @@ Future<bool> showConfirmDialog(
       actions: [
         TextButton(
           onPressed: () => Navigator.of(ctx).pop(false),
-          child: Text(cancelLabel),
+          child: Text(cancelLabel ?? s.actionCancel),
         ),
         FilledButton(
           onPressed: () => Navigator.of(ctx).pop(true),
-          child: Text(confirmLabel),
+          child: Text(confirmLabel ?? s.actionConfirm),
         ),
       ],
     ),
@@ -32,6 +34,7 @@ Future<void> showErrorDialog(
   required String title,
   required String message,
 }) {
+  final s = context.s;
   return showDialog<void>(
     context: context,
     builder: (ctx) => AlertDialog(
@@ -40,7 +43,7 @@ Future<void> showErrorDialog(
       actions: [
         FilledButton(
           onPressed: () => Navigator.of(ctx).pop(),
-          child: const Text('OK'),
+          child: Text(s.actionOk),
         ),
       ],
     ),
@@ -51,11 +54,11 @@ Future<bool> showStockShortageDialog(
   BuildContext context, {
   required List<String> lines,
 }) async {
+  final s = context.s;
   return showConfirmDialog(
     context,
-    title: 'Stock insuffisant',
-    message:
-        'Certains produits n\'ont pas assez de stock disponible :\n\n${lines.join('\n')}\n\nContinuer quand même ?',
-    confirmLabel: 'Continuer',
+    title: s.stockShortageTitle,
+    message: s.stockShortageMessage(lines),
+    confirmLabel: s.actionContinue,
   );
 }

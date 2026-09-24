@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fes_distribution/ui/common/shell_app_bar.dart';
+import 'package:fes_distribution/ui/l10n/strings_scope.dart';
 import 'package:fes_distribution/ui/theme/app_theme.dart';
 
 /// Placeholder list shell for modules not yet wired to the business layer.
@@ -19,17 +20,19 @@ class ModuleListPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.s;
+
     return Scaffold(
       appBar: ShellAppBar(title: title),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: onNew ??
             () {
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('$title — bientôt disponible')),
+                SnackBar(content: Text(s.comingSoon(title))),
               );
             },
         icon: const Icon(Icons.add),
-        label: const Text('Nouveau'),
+        label: Text(s.actionNew),
       ),
       body: Column(
         children: [

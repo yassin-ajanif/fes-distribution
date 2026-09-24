@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fes_distribution/ui/app/shell_scope.dart';
+import 'package:fes_distribution/ui/l10n/strings_scope.dart';
 
 /// App bar for pages inside the app shell — shows hamburger to open the drawer.
 class ShellAppBar extends StatelessWidget implements PreferredSizeWidget {
@@ -24,7 +25,7 @@ class ShellAppBar extends StatelessWidget implements PreferredSizeWidget {
       leading: hasDrawer
           ? IconButton(
               icon: const Icon(Icons.menu),
-              tooltip: 'Menu',
+              tooltip: context.s.menuTooltip,
               onPressed: () => ShellScope.openDrawer(context),
             )
           : null,

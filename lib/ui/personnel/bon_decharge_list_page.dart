@@ -8,6 +8,7 @@ import 'package:fes_distribution/ui/common/loading_view.dart';
 import 'package:fes_distribution/ui/common/shell_app_bar.dart';
 import 'package:fes_distribution/ui/common/responsive.dart';
 import 'package:fes_distribution/ui/providers/service_providers.dart';
+import 'package:fes_distribution/ui/l10n/strings_scope.dart';
 import 'package:fes_distribution/ui/theme/app_theme.dart';
 
 class BonDechargeListPage extends ConsumerStatefulWidget {
@@ -56,16 +57,17 @@ class _BonDechargeListPageState extends ConsumerState<BonDechargeListPage> {
     } catch (e) {
       if (mounted) {
         setState(() => _loading = false);
-        await showErrorDialog(context, title: 'Bon décharge', message: '$e');
+        await showErrorDialog(context, title: context.s.menuBonDecharge, message: '$e');
       }
     }
   }
 
   Future<void> _deleteItem(BonDechargeListItem item) async {
+    final s = context.s;
     final ok = await showConfirmDialog(
       context,
-      title: 'Bon décharge',
-      message: 'Supprimer ${item.bon.numero} ?',
+      title: s.menuBonDecharge,
+      message: s.deleteBonConfirm(item.bon.numero),
     );
     if (!ok) return;
 
@@ -77,18 +79,19 @@ class _BonDechargeListPageState extends ConsumerState<BonDechargeListPage> {
     } catch (e) {
       if (mounted) {
         setState(() => _loading = false);
-        await showErrorDialog(context, title: 'Bon décharge', message: '$e');
+        await showErrorDialog(context, title: context.s.menuBonDecharge, message: '$e');
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final s = context.s;
     final mobile = isMobile(context);
 
     return Scaffold(
       appBar: ShellAppBar(
-        title: 'Bons de décharge',
+        title: s.menuBonDecharge,
         actions: [
           IconButton(icon: const Icon(Icons.refresh), onPressed: _load),
         ],
@@ -96,7 +99,7 @@ class _BonDechargeListPageState extends ConsumerState<BonDechargeListPage> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.push('/distribution/bons-decharge/new'),
         icon: const Icon(Icons.add),
-        label: const Text('Nouveau'),
+        label: Text(s.actionNew),
       ),
       body: Column(
         children: [
@@ -105,7 +108,7 @@ class _BonDechargeListPageState extends ConsumerState<BonDechargeListPage> {
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: 'Rechercher numéro, vendeur, note…',
+                hintText: s.searchBon,
                 prefixIcon: const Icon(Icons.search),
                 suffixIcon: IconButton(
                   icon: const Icon(Icons.search),
@@ -121,7 +124,7 @@ class _BonDechargeListPageState extends ConsumerState<BonDechargeListPage> {
                 : _items.isEmpty
                     ? Center(
                         child: Text(
-                          'Aucun bon de décharge.',
+                          s.emptyBonDecharge,
                           style: TextStyle(color: AppColors.muted),
                         ),
                       )

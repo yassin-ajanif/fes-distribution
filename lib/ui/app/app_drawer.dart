@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:fes_distribution/ui/app/app_menu.dart';
+import 'package:fes_distribution/ui/l10n/strings_scope.dart';
 import 'package:fes_distribution/ui/theme/app_theme.dart';
 
 class AppDrawer extends StatelessWidget {
@@ -65,6 +66,8 @@ class _AppMenuPanelState extends State<AppMenuPanel> {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.s;
+    final sections = AppMenu.sections(s);
     final selected = AppMenu.selectedRoute(widget.currentLocation);
 
     return SafeArea(
@@ -82,7 +85,7 @@ class _AppMenuPanelState extends State<AppMenuPanel> {
                       color: Colors.white.withValues(alpha: 0.9), size: 36),
                   const SizedBox(height: 8),
                   Text(
-                    'Fes Distribution',
+                    s.appTitle,
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
@@ -95,14 +98,14 @@ class _AppMenuPanelState extends State<AppMenuPanel> {
             child: ListView(
               padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
               children: [
-                for (var i = 0; i < AppMenu.sections.length; i++) ...[
+                for (var i = 0; i < sections.length; i++) ...[
                   _MenuSectionHeader(
-                    title: AppMenu.sections[i].title,
+                    title: sections[i].title,
                     expanded: _expandedSectionId == AppMenu.sectionIds[i],
                     onTap: () => _toggleSection(AppMenu.sectionIds[i]),
                   ),
                   if (_expandedSectionId == AppMenu.sectionIds[i])
-                    for (final item in AppMenu.sections[i].items)
+                    for (final item in sections[i].items)
                       ListTile(
                         leading: Icon(
                           selected == item.route
