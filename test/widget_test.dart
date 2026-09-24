@@ -6,7 +6,7 @@ import 'package:fes_distribution/db/app_database.dart';
 import 'package:fes_distribution/ui/app/app.dart';
 
 void main() {
-  testWidgets('mobile shell shows bottom navigation', (tester) async {
+  testWidgets('mobile shell shows drawer menu button', (tester) async {
     final database = AppDatabase(NativeDatabase.memory());
     addTearDown(database.close);
 
@@ -18,13 +18,18 @@ void main() {
     await tester.pumpWidget(FesDistributionApp(database: database));
     await tester.pumpAndSettle();
 
+    expect(find.byIcon(Icons.menu), findsOneWidget);
+    expect(find.byType(NavigationBar), findsNothing);
+
+    await tester.tap(find.byIcon(Icons.menu));
+    await tester.pumpAndSettle();
+
     expect(find.text('Vendeurs'), findsWidgets);
-    expect(find.text('Charge'), findsOneWidget);
-    expect(find.text('Décharge'), findsOneWidget);
-    expect(find.byType(NavigationBar), findsOneWidget);
+    expect(find.text('Bons de charge'), findsOneWidget);
+    expect(find.text('Bons de décharge'), findsOneWidget);
   });
 
-  testWidgets('desktop shell shows navigation rail', (tester) async {
+  testWidgets('desktop shell shows permanent sidebar', (tester) async {
     final database = AppDatabase(NativeDatabase.memory());
     addTearDown(database.close);
 
@@ -36,7 +41,8 @@ void main() {
     await tester.pumpWidget(FesDistributionApp(database: database));
     await tester.pumpAndSettle();
 
-    expect(find.byType(NavigationRail), findsOneWidget);
-    expect(find.byType(NavigationBar), findsNothing);
+    expect(find.text('DISTRIBUTION'), findsOneWidget);
+    expect(find.text('Bons de charge'), findsOneWidget);
+    expect(find.byType(Drawer), findsNothing);
   });
 }

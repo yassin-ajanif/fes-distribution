@@ -6,6 +6,9 @@ import 'package:fes_distribution/ui/personnel/bon_charge_list_page.dart';
 import 'package:fes_distribution/ui/personnel/bon_decharge_edit_page.dart';
 import 'package:fes_distribution/ui/personnel/bon_decharge_list_page.dart';
 import 'package:fes_distribution/ui/personnel/vendeur_detail_page.dart';
+import 'package:fes_distribution/ui/facturation/avoir_list_page.dart';
+import 'package:fes_distribution/ui/facturation/facture_list_page.dart';
+import 'package:fes_distribution/ui/livraison/bl_list_page.dart';
 import 'package:fes_distribution/ui/personnel/vendeurs_page.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();

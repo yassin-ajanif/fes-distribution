@@ -5,6 +5,7 @@ import 'package:fes_distribution/db/app_database.dart';
 import 'package:fes_distribution/db/db_seeder.dart';
 import 'package:fes_distribution/ui/common/confirm_dialog.dart';
 import 'package:fes_distribution/ui/common/loading_view.dart';
+import 'package:fes_distribution/ui/common/shell_app_bar.dart';
 import 'package:fes_distribution/ui/providers/service_providers.dart';
 import 'package:fes_distribution/ui/theme/app_theme.dart';
 
@@ -54,8 +55,8 @@ class _VendeursPageState extends ConsumerState<VendeursPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Vendeurs'),
+      appBar: ShellAppBar(
+        title: 'Vendeurs',
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -101,7 +102,7 @@ class _VendeursPageState extends ConsumerState<VendeursPage> {
                     : RefreshIndicator(
                         onRefresh: _load,
                         child: ListView.separated(
-                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 88),
+                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 88), // FAB clearance
                           itemCount: _vendeurs.length,
                           separatorBuilder: (_, __) => const SizedBox(height: 8),
                           itemBuilder: (context, index) {

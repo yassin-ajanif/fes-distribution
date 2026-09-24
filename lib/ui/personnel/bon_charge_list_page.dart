@@ -5,6 +5,7 @@ import 'package:fes_distribution/business/models/bon_charge_list_item.dart';
 import 'package:fes_distribution/ui/common/confirm_dialog.dart';
 import 'package:fes_distribution/ui/common/formatters.dart';
 import 'package:fes_distribution/ui/common/loading_view.dart';
+import 'package:fes_distribution/ui/common/shell_app_bar.dart';
 import 'package:fes_distribution/ui/common/responsive.dart';
 import 'package:fes_distribution/ui/providers/service_providers.dart';
 import 'package:fes_distribution/ui/theme/app_theme.dart';
@@ -85,8 +86,8 @@ class _BonChargeListPageState extends ConsumerState<BonChargeListPage> {
     final mobile = isMobile(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Bons de charge'),
+      appBar: ShellAppBar(
+        title: 'Bons de charge',
         actions: [
           IconButton(icon: const Icon(Icons.refresh), onPressed: _load),
         ],
