@@ -4,7 +4,7 @@ import 'package:fes_distribution/business/enums/user_type.dart';
 import 'package:fes_distribution/business/helpers/document_totals.dart';
 import 'package:fes_distribution/business/models/bon_livraison_list_item.dart';
 import 'package:fes_distribution/business/models/bon_livraison_paiement.dart';
-import 'package:fes_distribution/business/models/personnel_document_line.dart';
+import 'package:fes_distribution/business/models/document_line.dart';
 import 'package:fes_distribution/business/services/stock/parametres/document_number_service.dart';
 import 'package:fes_distribution/business/services/stock/stock/stock_location_service.dart';
 import 'package:fes_distribution/business/services/stock/stock/stock_movement_service.dart';
@@ -86,7 +86,7 @@ class BonLivraisonService {
   Future<
       ({
         BonsLivraisonData bl,
-        List<PersonnelDocumentLine> lines,
+        List<DocumentLine> lines,
         List<BonLivraisonPaiement> paiements,
       })?> getById(int id) async {
     final bl = await (_db.select(_db.bonsLivraison)
@@ -118,7 +118,7 @@ class BonLivraisonService {
       bl: bl,
       lines: [
         for (final l in lineRows)
-          PersonnelDocumentLine(
+          DocumentLine(
             produitId: l.produitId,
             reference: productMap[l.produitId]?.reference ?? '',
             designation: l.designation,
@@ -150,7 +150,7 @@ class BonLivraisonService {
     required DateTime dateEcheance,
     double remiseGlobale = 0,
     String note = '',
-    required List<PersonnelDocumentLine> lines,
+    required List<DocumentLine> lines,
     List<BonLivraisonPaiement> paiements = const [],
     int? createdByUserId,
   }) async {

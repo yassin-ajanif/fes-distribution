@@ -1,5 +1,7 @@
-class PersonnelDocumentLine {
-  PersonnelDocumentLine({
+/// Editable product line shared by bon de charge / décharge, BL and facture.
+/// [bonLivraisonId] is set on facture lines copied from a BL.
+class DocumentLine {
+  DocumentLine({
     this.produitId = 0,
     this.reference = '',
     this.designation = '',
@@ -7,6 +9,7 @@ class PersonnelDocumentLine {
     this.prixUnitaireHt = 0,
     this.remise = 0,
     this.tauxTva = 0,
+    this.bonLivraisonId,
   });
 
   int produitId;
@@ -16,6 +19,10 @@ class PersonnelDocumentLine {
   double prixUnitaireHt;
   double remise;
   double tauxTva;
+  int? bonLivraisonId;
+
+  /// Stable identity for widgets: the same product may appear once per BL.
+  String get key => '${bonLivraisonId ?? 0}-$produitId';
 
   double get montantHt {
     final brut = quantite * prixUnitaireHt;
@@ -24,7 +31,7 @@ class PersonnelDocumentLine {
 
   double get montantTtc => montantHt * (1 + tauxTva / 100);
 
-  PersonnelDocumentLine copyWith({
+  DocumentLine copyWith({
     int? produitId,
     String? reference,
     String? designation,
@@ -33,7 +40,7 @@ class PersonnelDocumentLine {
     double? remise,
     double? tauxTva,
   }) {
-    return PersonnelDocumentLine(
+    return DocumentLine(
       produitId: produitId ?? this.produitId,
       reference: reference ?? this.reference,
       designation: designation ?? this.designation,
@@ -41,6 +48,7 @@ class PersonnelDocumentLine {
       prixUnitaireHt: prixUnitaireHt ?? this.prixUnitaireHt,
       remise: remise ?? this.remise,
       tauxTva: tauxTva ?? this.tauxTva,
+      bonLivraisonId: bonLivraisonId,
     );
   }
 }

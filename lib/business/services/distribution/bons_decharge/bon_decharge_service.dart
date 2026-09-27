@@ -1,6 +1,6 @@
 import 'package:drift/drift.dart';
 import 'package:fes_distribution/business/models/bon_decharge_list_item.dart';
-import 'package:fes_distribution/business/models/personnel_document_line.dart';
+import 'package:fes_distribution/business/models/document_line.dart';
 import 'package:fes_distribution/business/services/stock/parametres/document_number_service.dart';
 import 'package:fes_distribution/business/services/stock/stock/stock_location_service.dart';
 import 'package:fes_distribution/business/services/stock/stock/stock_movement_service.dart';
@@ -81,7 +81,7 @@ class BonDechargeService {
         .toList();
   }
 
-  Future<({BonsDechargeData bon, List<PersonnelDocumentLine> lines})?> getById(
+  Future<({BonsDechargeData bon, List<DocumentLine> lines})?> getById(
     int id,
   ) async {
     final bon = await (_db.select(_db.bonsDecharge)
@@ -103,7 +103,7 @@ class BonDechargeService {
 
     final lines = lineRows
         .map(
-          (l) => PersonnelDocumentLine(
+          (l) => DocumentLine(
             produitId: l.produitId,
             reference: productMap[l.produitId]?.reference ?? '',
             designation: l.designation,
@@ -124,7 +124,7 @@ class BonDechargeService {
     required int depotLocationId,
     required DateTime date,
     required String note,
-    required List<PersonnelDocumentLine> lines,
+    required List<DocumentLine> lines,
     int? createdByUserId,
   }) async {
     final validLines =

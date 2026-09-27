@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:fes_distribution/business/helpers/document_totals.dart';
-import 'package:fes_distribution/business/models/personnel_document_line.dart';
+import 'package:fes_distribution/business/models/document_line.dart';
 import 'package:fes_distribution/business/services/stock/stock/stock_movement_service.dart';
 import 'package:fes_distribution/db/app_database.dart';
 import 'package:fes_distribution/ui/common/app_bar_save_button.dart';
@@ -10,7 +10,7 @@ import 'package:fes_distribution/ui/common/confirm_dialog.dart';
 import 'package:fes_distribution/ui/common/formatters.dart';
 import 'package:fes_distribution/ui/common/loading_view.dart';
 import 'package:fes_distribution/ui/l10n/strings_scope.dart';
-import 'package:fes_distribution/ui/personnel/widgets/document_lines_table.dart';
+import 'package:fes_distribution/ui/common/document_lines_table.dart';
 import 'package:fes_distribution/ui/providers/service_providers.dart';
 import 'package:fes_distribution/ui/theme/app_theme.dart';
 
@@ -23,7 +23,7 @@ typedef _LoadedDoc = ({
   String note,
   int userId,
   int depotId,
-  List<PersonnelDocumentLine> lines,
+  List<DocumentLine> lines,
 });
 
 class PersonnelDocumentEditPage extends ConsumerStatefulWidget {
@@ -51,7 +51,7 @@ class _PersonnelDocumentEditPageState
   List<User> _vendeurs = [];
   List<StockLocation> _depots = [];
   List<Produit> _produits = [];
-  List<PersonnelDocumentLine> _lines = [];
+  List<DocumentLine> _lines = [];
 
   /// Stock at the source (depot for charge, vendeur car for décharge),
   /// including what this saved bon already moved out of it.
@@ -211,7 +211,7 @@ class _PersonnelDocumentEditPageState
 
   DocumentTotals get _totals => DocumentTotals.fromLines(_lines);
 
-  PersonnelDocumentLine _lineFor(Produit p, double qty) => PersonnelDocumentLine(
+  DocumentLine _lineFor(Produit p, double qty) => DocumentLine(
         produitId: p.id,
         reference: p.reference,
         designation: p.designation,

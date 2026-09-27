@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:fes_distribution/business/enums/mode_paiement.dart';
 import 'package:fes_distribution/business/helpers/document_totals.dart';
 import 'package:fes_distribution/business/models/bon_livraison_paiement.dart';
-import 'package:fes_distribution/business/models/personnel_document_line.dart';
+import 'package:fes_distribution/business/models/document_line.dart';
 import 'package:fes_distribution/business/services/stock/stock/stock_movement_service.dart';
 import 'package:fes_distribution/db/app_database.dart';
 import 'package:fes_distribution/ui/common/app_bar_save_button.dart';
@@ -14,7 +14,7 @@ import 'package:fes_distribution/ui/common/formatters.dart';
 import 'package:fes_distribution/ui/common/loading_view.dart';
 import 'package:fes_distribution/ui/l10n/app_strings.dart';
 import 'package:fes_distribution/ui/l10n/strings_scope.dart';
-import 'package:fes_distribution/ui/personnel/widgets/document_lines_table.dart';
+import 'package:fes_distribution/ui/common/document_lines_table.dart';
 import 'package:fes_distribution/ui/providers/service_providers.dart';
 import 'package:fes_distribution/ui/theme/app_theme.dart';
 
@@ -53,7 +53,7 @@ class _BlEditPageState extends ConsumerState<BlEditPage> {
   List<Tier> _clients = [];
   List<User> _vendeurs = [];
   List<Produit> _produits = [];
-  List<PersonnelDocumentLine> _lines = [];
+  List<DocumentLine> _lines = [];
   List<BonLivraisonPaiement> _paiements = [];
 
   /// Stock in the selected vendeur's car, including what this saved BL
@@ -181,7 +181,7 @@ class _BlEditPageState extends ConsumerState<BlEditPage> {
         _lines[i] = _lines[i].copyWith(quantite: _lines[i].quantite + 1);
       } else {
         _lines.add(
-          PersonnelDocumentLine(
+          DocumentLine(
             produitId: p.id,
             reference: p.reference,
             designation: p.designation,

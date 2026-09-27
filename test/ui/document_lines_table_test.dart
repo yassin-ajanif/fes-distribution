@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:fes_distribution/business/models/personnel_document_line.dart';
+import 'package:fes_distribution/business/models/document_line.dart';
 import 'package:fes_distribution/ui/l10n/app_language.dart';
 import 'package:fes_distribution/ui/l10n/app_strings.dart';
 import 'package:fes_distribution/ui/l10n/strings_scope.dart';
-import 'package:fes_distribution/ui/personnel/widgets/document_lines_table.dart';
+import 'package:fes_distribution/ui/common/document_lines_table.dart';
 
 class _Host extends StatefulWidget {
   const _Host();
@@ -15,8 +15,8 @@ class _Host extends StatefulWidget {
 
 class _HostState extends State<_Host> {
   final lines = [
-    PersonnelDocumentLine(produitId: 1, reference: 'A', designation: 'Blanc', quantite: 1, prixUnitaireHt: 10),
-    PersonnelDocumentLine(produitId: 2, reference: 'B', designation: 'Noir', quantite: 3, prixUnitaireHt: 10),
+    DocumentLine(produitId: 1, reference: 'A', designation: 'Blanc', quantite: 1, prixUnitaireHt: 10),
+    DocumentLine(produitId: 2, reference: 'B', designation: 'Noir', quantite: 3, prixUnitaireHt: 10),
   ];
 
   @override

@@ -3,7 +3,7 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fes_distribution/business/enums/mode_paiement.dart';
 import 'package:fes_distribution/business/models/bon_livraison_paiement.dart';
-import 'package:fes_distribution/business/models/personnel_document_line.dart';
+import 'package:fes_distribution/business/models/document_line.dart';
 import 'package:fes_distribution/business/services/distribution/bons_charge/bon_charge_service.dart';
 import 'package:fes_distribution/business/services/distribution/vendeurs/user_service.dart';
 import 'package:fes_distribution/business/services/stock/parametres/document_number_service.dart';
@@ -24,7 +24,7 @@ void main() {
   late int productId;
   late int clientId;
 
-  PersonnelDocumentLine line(double qty) => PersonnelDocumentLine(
+  DocumentLine line(double qty) => DocumentLine(
         produitId: productId,
         designation: 'Peinture blanche',
         quantite: qty,

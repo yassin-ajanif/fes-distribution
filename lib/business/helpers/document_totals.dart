@@ -1,4 +1,4 @@
-import '../models/personnel_document_line.dart';
+import '../models/document_line.dart';
 
 class DocumentTotals {
   const DocumentTotals({
@@ -16,7 +16,7 @@ class DocumentTotals {
 
   /// [remiseGlobale] is a percentage applied to both HT and TVA.
   static DocumentTotals fromLines(
-    List<PersonnelDocumentLine> lines, {
+    List<DocumentLine> lines, {
     double remiseGlobale = 0,
   }) {
     var ht = 0.0;

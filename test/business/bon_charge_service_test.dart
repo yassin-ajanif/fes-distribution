@@ -1,7 +1,7 @@
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:fes_distribution/business/models/personnel_document_line.dart';
+import 'package:fes_distribution/business/models/document_line.dart';
 import 'package:fes_distribution/business/services/distribution/bons_charge/bon_charge_service.dart';
 import 'package:fes_distribution/business/services/distribution/bons_decharge/bon_decharge_service.dart';
 import 'package:fes_distribution/business/services/stock/parametres/document_number_service.dart';
@@ -69,7 +69,7 @@ void main() {
       date: DateTime.now(),
       note: '',
       lines: [
-        PersonnelDocumentLine(
+        DocumentLine(
           produitId: productId,
           designation: 'Test paint',
           quantite: 10,
@@ -122,7 +122,7 @@ void main() {
     final car = await locations.getOrCreateVirtualForUser(vendeur);
     final depot2 = await locations.createPhysicalLocation('Dépôt 2');
 
-    final line = PersonnelDocumentLine(
+    final line = DocumentLine(
       produitId: productId,
       designation: 'Vernis',
       quantite: 12,

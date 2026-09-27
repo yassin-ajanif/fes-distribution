@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:fes_distribution/business/models/personnel_document_line.dart';
+import 'package:fes_distribution/business/models/document_line.dart';
 import 'package:fes_distribution/ui/common/formatters.dart';
 import 'package:fes_distribution/ui/common/responsive.dart';
 import 'package:fes_distribution/ui/l10n/strings_scope.dart';
@@ -9,21 +9,22 @@ import 'package:fes_distribution/ui/theme/app_theme.dart';
 double parseQty(String text) =>
     double.tryParse(text.replaceAll(RegExp(r'\s'), '').replaceAll(',', '.')) ?? 0;
 
-/// Editable lines of a bon de charge / décharge.
-/// [available] = stock at the source location per product (shown as "Dispo").
+/// Editable document lines.
+/// [available] = stock at the source location per product (shown as "Dispo");
+/// null hides the column (documents without stock impact, e.g. facture).
 class DocumentLinesTable extends StatelessWidget {
   const DocumentLinesTable({
     super.key,
     required this.lines,
     required this.onChanged,
     required this.onRemoveAt,
-    this.available = const {},
+    this.available,
   });
 
-  final List<PersonnelDocumentLine> lines;
-  final void Function(int index, PersonnelDocumentLine line) onChanged;
+  final List<DocumentLine> lines;
+  final void Function(int index, DocumentLine line) onChanged;
   final void Function(int index) onRemoveAt;
-  final Map<int, double> available;
+  final Map<int, double>? available;
 
   @override
   Widget build(BuildContext context) {
@@ -45,11 +46,11 @@ class DocumentLinesTable extends StatelessWidget {
     return isMobile(context) ? _buildMobile(context) : _buildDesktop(context);
   }
 
-  bool _isShort(PersonnelDocumentLine l) =>
-      l.quantite > (available[l.produitId] ?? 0);
+  bool _isShort(DocumentLine l) =>
+      available != null && l.quantite > (available![l.produitId] ?? 0);
 
-  Widget _dispoText(PersonnelDocumentLine l, {String Function(String)? label}) {
-    final qty = formatQty(available[l.produitId] ?? 0);
+  Widget _dispoText(DocumentLine l, {String Function(String)? label}) {
+    final qty = formatQty(available?[l.produitId] ?? 0);
     return Text(
       label == null ? qty : label(qty),
       style: TextStyle(
@@ -65,7 +66,7 @@ class DocumentLinesTable extends StatelessWidget {
       children: [
         for (var i = 0; i < lines.length; i++)
           Card(
-            key: ValueKey('line-${lines[i].produitId}'),
+            key: ValueKey('line-${lines[i].key}'),
             margin: const EdgeInsets.only(bottom: 8),
             child: Padding(
               padding: const EdgeInsets.fromLTRB(12, 4, 4, 12),
@@ -81,7 +82,8 @@ class DocumentLinesTable extends StatelessWidget {
                           style: const TextStyle(fontWeight: FontWeight.w600),
                         ),
                       ),
-                      Flexible(child: _dispoText(lines[i], label: s.available)),
+                      if (available != null)
+                        Flexible(child: _dispoText(lines[i], label: s.available)),
                       IconButton(
                         icon: const Icon(Icons.delete_outline, size: 20),
                         onPressed: () => onRemoveAt(i),
@@ -147,7 +149,8 @@ class DocumentLinesTable extends StatelessWidget {
             DataColumn(label: Text(s.colRef)),
             DataColumn(label: Text(s.fieldDesignation)),
             DataColumn(label: Text(s.colQty), numeric: true),
-            DataColumn(label: Text(s.colDispo), numeric: true),
+            if (available != null)
+              DataColumn(label: Text(s.colDispo), numeric: true),
             DataColumn(label: Text(s.colPuHt), numeric: true),
             DataColumn(label: Text(s.colRemise), numeric: true),
             DataColumn(label: Text(s.colTva), numeric: true),
@@ -164,7 +167,7 @@ class DocumentLinesTable extends StatelessWidget {
                     SizedBox(
                       width: 200,
                       child: _TextCell(
-                        key: ValueKey('des-${lines[i].produitId}'),
+                        key: ValueKey('des-${lines[i].key}'),
                         value: lines[i].designation,
                         decoration: const InputDecoration(
                           isDense: true,
@@ -179,7 +182,7 @@ class DocumentLinesTable extends StatelessWidget {
                     SizedBox(
                       width: 80,
                       child: _QtyCell(
-                        key: ValueKey('qty-${lines[i].produitId}'),
+                        key: ValueKey('qty-${lines[i].key}'),
                         value: lines[i].quantite,
                         decoration: const InputDecoration(isDense: true),
                         onChanged: (q) =>
@@ -187,7 +190,7 @@ class DocumentLinesTable extends StatelessWidget {
                       ),
                     ),
                   ),
-                  DataCell(_dispoText(lines[i])),
+                  if (available != null) DataCell(_dispoText(lines[i])),
                   DataCell(Text(formatMoney(lines[i].prixUnitaireHt))),
                   DataCell(Text(formatQty(lines[i].remise))),
                   DataCell(Text(formatQty(lines[i].tauxTva))),
