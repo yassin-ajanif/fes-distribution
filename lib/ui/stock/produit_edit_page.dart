@@ -29,8 +29,12 @@ class _ProduitEditPageState extends ConsumerState<ProduitEditPage> {
   final _prixVente = TextEditingController(text: '0');
   final _tva = TextEditingController(text: '20');
   final _stockMin = TextEditingController(text: '0');
+  final _stockToAdd = TextEditingController();
 
   List<Category> _categories = [];
+  List<StockLocation> _depots = [];
+  Map<int, double> _stockByDepot = {};
+  int? _depotId;
   int? _categorieId;
   bool _actif = true;
   bool _loading = true;
@@ -55,6 +59,7 @@ class _ProduitEditPageState extends ConsumerState<ProduitEditPage> {
       _prixVente,
       _tva,
       _stockMin,
+      _stockToAdd,
     ]) {
       c.dispose();
     }
@@ -64,14 +69,24 @@ class _ProduitEditPageState extends ConsumerState<ProduitEditPage> {
   Future<void> _load() async {
     try {
       final categories = await ref.read(categorieServiceProvider).listAll();
+      final depots =
+          await ref.read(stockLocationServiceProvider).getActivePhysicalLocations();
       Produit? produit;
+      final stockByDepot = <int, double>{};
       if (!_isNew) {
         produit = await ref.read(produitServiceProvider).getById(widget.produitId!);
         if (produit == null) throw StateError('Produit introuvable.');
+        final balance = ref.read(stockBalanceServiceProvider);
+        for (final d in depots) {
+          stockByDepot[d.id] = await balance.getStock(produit.id, d.id);
+        }
       }
       if (!mounted) return;
       setState(() {
         _categories = categories;
+        _depots = depots;
+        _stockByDepot = stockByDepot;
+        _depotId = depots.isNotEmpty ? depots.first.id : null;
         if (produit != null) {
           _reference.text = produit.reference;
           _designation.text = produit.designation;
@@ -105,6 +120,18 @@ class _ProduitEditPageState extends ConsumerState<ProduitEditPage> {
   String? _number(String? v) {
     final parsed = _parse(v ?? '');
     if (parsed == null || parsed < 0) return context.s.invalidNumber;
+    return null;
+  }
+
+  double get _currentDepotStock =>
+      _depotId == null ? 0 : (_stockByDepot[_depotId] ?? 0);
+
+  String? _validateStockToAdd(String? v) {
+    final text = (v ?? '').trim();
+    if (text.isEmpty) return null;
+    final delta = _parse(text);
+    if (delta == null) return context.s.invalidNumber;
+    if (_currentDepotStock + delta < 0) return context.s.stockNegative;
     return null;
   }
 
@@ -171,10 +198,21 @@ class _ProduitEditPageState extends ConsumerState<ProduitEditPage> {
     setState(() => _saving = true);
     try {
       final service = ref.read(produitServiceProvider);
+      final int produitId;
       if (_isNew) {
-        await service.create(input);
+        produitId = await service.create(input);
       } else {
-        await service.update(widget.produitId!, input);
+        produitId = widget.produitId!;
+        await service.update(produitId, input);
+      }
+      final delta = _parse(_stockToAdd.text) ?? 0;
+      if (delta != 0 && _depotId != null) {
+        await ref.read(stockMovementServiceProvider).applyAdjustment(
+              produitId: produitId,
+              locationId: _depotId!,
+              delta: delta,
+              note: s.produitStockMotif,
+            );
       }
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -321,6 +359,59 @@ class _ProduitEditPageState extends ConsumerState<ProduitEditPage> {
                     title: s.menuStock,
                     children: [
                       _numberField(_stockMin, s.fieldStockMin),
+                      if (_depots.isNotEmpty) ...[
+                        DropdownButtonFormField<int>(
+                          initialValue: _depotId,
+                          isExpanded: true,
+                          decoration: InputDecoration(
+                            labelText: s.locationPhysical,
+                            prefixIcon: const Icon(Icons.warehouse_outlined),
+                          ),
+                          items: [
+                            for (final d in _depots)
+                              DropdownMenuItem(
+                                value: d.id,
+                                child: Text(
+                                  _isNew
+                                      ? d.nom
+                                      : '${d.nom} (${formatQty(_stockByDepot[d.id] ?? 0)})',
+                                ),
+                              ),
+                          ],
+                          onChanged: (v) => setState(() => _depotId = v),
+                        ),
+                        TextFormField(
+                          controller: _stockToAdd,
+                          decoration: InputDecoration(
+                            labelText: s.stockToAdd,
+                            prefixIcon: const Icon(Icons.add_box_outlined),
+                          ),
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                            signed: true,
+                          ),
+                          inputFormatters: [
+                            FilteringTextInputFormatter.allow(RegExp(r'[0-9.,\-]')),
+                          ],
+                          autovalidateMode: AutovalidateMode.onUserInteraction,
+                          validator: _validateStockToAdd,
+                        ),
+                        ValueListenableBuilder(
+                          valueListenable: _stockToAdd,
+                          builder: (context, _, _) {
+                            final before = _currentDepotStock;
+                            final after = before + (_parse(_stockToAdd.text) ?? 0);
+                            return Text(
+                              s.stockBeforeAfter(formatQty(before), formatQty(after)),
+                              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                    color: after < 0
+                                        ? Theme.of(context).colorScheme.error
+                                        : null,
+                                  ),
+                            );
+                          },
+                        ),
+                      ],
                       SwitchListTile(
                         contentPadding: EdgeInsets.zero,
                         title: Text(s.fieldActif),

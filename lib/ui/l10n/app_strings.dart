@@ -152,6 +152,17 @@ class AppStrings {
   String get adjustMotif => _t('Motif', 'السبب');
   String get adjustDone => _t('Stock ajusté.', 'تم تعديل المخزون.');
   String get currentStock => _t('Stock actuel', 'المخزون الحالي');
+  String get stockToAdd => _t(
+        'Quantité à ajouter (− pour retirer)',
+        'الكمية المضافة (− للسحب)',
+      );
+  String stockBeforeAfter(String before, String after) =>
+      _t('Stock : $before → $after', 'المخزون: $before ← $after');
+  String get stockNegative => _t(
+        'Le stock ne peut pas devenir négatif.',
+        'لا يمكن أن يصبح المخزون سالبًا.',
+      );
+  String get produitStockMotif => _t('Fiche produit', 'بطاقة المنتج');
   String get transfer => _t('Transfert', 'تحويل');
   String get transferTitle =>
       _t('Transfert entre dépôts', 'تحويل بين المستودعات');
