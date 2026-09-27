@@ -119,6 +119,7 @@ class _AppMenuPanelState extends State<AppMenuPanel> {
                         title: Text(
                           item.label,
                           style: TextStyle(
+                            fontSize: 14,
                             fontWeight: selected == item.route
                                 ? FontWeight.w600
                                 : FontWeight.normal,
@@ -165,15 +166,14 @@ class _MenuSectionHeader extends StatelessWidget {
       contentPadding: const EdgeInsets.fromLTRB(12, 8, 8, 4),
       leading: Icon(
         expanded ? Icons.arrow_drop_down : Icons.arrow_right,
-        color: AppColors.muted,
-        size: 22,
+        color: AppColors.brand,
+        size: 26,
       ),
       title: Text(
         title.toUpperCase(),
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: AppColors.muted,
-              letterSpacing: 0.8,
-              fontWeight: FontWeight.w600,
+        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              color: AppColors.brand,
+              fontWeight: FontWeight.bold,
             ),
       ),
       onTap: onTap,

@@ -21,16 +21,16 @@ class AppStrings {
 
   // Menu items
   String get menuVendeurs => _t('Vendeurs', 'البائعون');
-  String get menuBonCharge => _t('Bons de charge', 'أذون الشحن');
-  String get menuBonDecharge => _t('Bons de décharge', 'أذون التفريغ');
-  String get menuBl => _t('Bons de livraison', 'أذون التسليم');
+  String get menuBonCharge => _t('Bons de charge', 'بون الشحن');
+  String get menuBonDecharge => _t('Bons de décharge', 'بون التفريغ');
+  String get menuBl => _t('Bons de livraison', 'بون التسليم');
   String get menuFactures => _t('Factures', 'الفواتير');
-  String get menuAvoirs => _t('Avoirs', 'الإشعارات الدائنة');
-  String get menuBr => _t('Bons réception', 'أذون الاستلام');
+  String get menuAvoirs => _t('Avoirs', 'بون الإرجاع');
+  String get menuBr => _t('Bons réception', 'بون الاستلام');
   String get menuFacturesFournisseur =>
       _t('Factures fournisseur', 'فواتير الشراء');
   String get menuAvoirsFournisseur =>
-      _t('Avoirs fournisseur', 'إشعارات دائنة للمورد');
+      _t('Avoirs fournisseur', 'بون الإرجاع للمورد');
   String get menuStock => _t('Stock', 'المخزون');
   String get menuProduits => _t('Produits', 'المنتجات');
   String get menuRapports => _t('Rapports', 'التقارير');
@@ -67,12 +67,12 @@ class AppStrings {
   String get searchBl =>
       _t('Rechercher numéro, client, vendeur…', 'بحث برقم، عميل، بائع…');
   String get emptyBl =>
-      _t('Aucun bon de livraison.', 'لا يوجد أذن تسليم.');
+      _t('Aucun bon de livraison.', 'لا يوجد بون تسليم.');
 
   // Ventes — bons de livraison
-  String get blNew => _t('Nouveau bon de livraison', 'أذن تسليم جديد');
+  String get blNew => _t('Nouveau bon de livraison', 'بون تسليم جديد');
   String get blSaved =>
-      _t('Bon de livraison enregistré.', 'تم حفظ أذن التسليم.');
+      _t('Bon de livraison enregistré.', 'تم حفظ بون التسليم.');
   String get blFlow => _t(
         'Véhicule du vendeur → client',
         'سيارة البائع ← العميل',
@@ -132,22 +132,22 @@ class AppStrings {
   String get fieldEstPayee => _t('Facture payée', 'فاتورة مدفوعة');
   String get fieldBonCommandeRef =>
       _t('Réf. bon de commande client', 'مرجع طلبية العميل');
-  String get linkedBls => _t('Bons de livraison facturés', 'أذون التسليم المفوترة');
-  String get addBls => _t('Ajouter des BL', 'إضافة أذون تسليم');
+  String get linkedBls => _t('Bons de livraison facturés', 'بون التسليم المفوتر');
+  String get addBls => _t('Ajouter des BL', 'إضافة بون تسليم');
   String get noLinkedBl => _t(
         'Aucun BL lié. Ajoutez des BL ou des produits du catalogue.',
-        'لا يوجد أذن تسليم مرتبط. أضف أذون تسليم أو منتجات.',
+        'لا يوجد بون تسليم مرتبط. أضف بون تسليم أو منتجات.',
       );
   String get noAvailableBls => _t(
         'Aucun BL non facturé pour ce client.',
-        'لا يوجد أذن تسليم غير مفوتر لهذا العميل.',
+        'لا يوجد بون تسليم غير مفوتر لهذا العميل.',
       );
   String get clientLockedByBl => _t(
         'Retirez les BL liés pour changer de client.',
-        'احذف أذون التسليم المرتبطة لتغيير العميل.',
+        'احذف بون التسليم المرتبط لتغيير العميل.',
       );
   String get colEcheance => _t('Échéance', 'الاستحقاق');
-  String get colBls => _t('BL', 'أذون التسليم');
+  String get colBls => _t('BL', 'بون التسليم');
   String get statusEnRetard => _t('En retard', 'متأخرة');
   String get filterAll => _t('Toutes', 'الكل');
   String blInvoiced(String numero) =>
@@ -155,16 +155,16 @@ class AppStrings {
   String get actionInvoice => _t('Facturer', 'فوترة');
   String get searchAvoir =>
       _t('Rechercher numéro, client…', 'بحث برقم، عميل…');
-  String get emptyAvoir => _t('Aucun avoir.', 'لا يوجد إشعار دائن.');
-  String get avoirNew => _t('Nouvel avoir', 'إشعار دائن جديد');
-  String get avoirSaved => _t('Avoir enregistré.', 'تم حفظ الإشعار الدائن.');
-  String get createAvoir => _t('Créer un avoir', 'إنشاء إشعار دائن');
+  String get emptyAvoir => _t('Aucun avoir.', 'لا يوجد بون إرجاع.');
+  String get avoirNew => _t('Nouvel avoir', 'بون إرجاع جديد');
+  String get avoirSaved => _t('Avoir enregistré.', 'تم حفظ بون الإرجاع.');
+  String get createAvoir => _t('Créer un avoir', 'إنشاء بون إرجاع');
   String get fieldFactureOptional =>
       _t('Facture (optionnelle)', 'الفاتورة (اختيارية)');
   String get noFactureLinked => _t('Aucune facture', 'بدون فاتورة');
   String resteSurFacture(String amount) => _t(
         'Reste créditable sur la facture : $amount',
-        'المتبقي القابل للإشعار على الفاتورة: $amount',
+        'المتبقي القابل للإرجاع على الفاتورة: $amount',
       );
   String get clientLockedByFacture => _t(
         'Retirez la facture pour changer de client.',
@@ -193,10 +193,10 @@ class AppStrings {
   // Achats — bons de réception
   String get searchBr =>
       _t('Rechercher numéro, fournisseur…', 'بحث برقم، مورد…');
-  String get emptyBr => _t('Aucun bon de réception.', 'لا يوجد أذن استلام.');
-  String get brNew => _t('Nouveau bon de réception', 'أذن استلام جديد');
+  String get emptyBr => _t('Aucun bon de réception.', 'لا يوجد بون استلام.');
+  String get brNew => _t('Nouveau bon de réception', 'بون استلام جديد');
   String get brSaved =>
-      _t('Bon de réception enregistré.', 'تم حفظ أذن الاستلام.');
+      _t('Bon de réception enregistré.', 'تم حفظ بون الاستلام.');
   String brFlow(String depot) =>
       _t('Fournisseur → $depot', 'المورد ← $depot');
 
@@ -210,31 +210,31 @@ class AppStrings {
   String get factureFournisseurSaved =>
       _t('Facture fournisseur enregistrée.', 'تم حفظ فاتورة المورد.');
   String get linkedBrs =>
-      _t('Bons de réception facturés', 'أذون الاستلام المفوترة');
-  String get addBrs => _t('Ajouter des BR', 'إضافة أذون استلام');
+      _t('Bons de réception facturés', 'بون الاستلام المفوتر');
+  String get addBrs => _t('Ajouter des BR', 'إضافة بون استلام');
   String get noLinkedBr => _t(
         'Aucun BR lié. Ajoutez des BR ou des produits du catalogue.',
-        'لا يوجد أذن استلام مرتبط. أضف أذون استلام أو منتجات.',
+        'لا يوجد بون استلام مرتبط. أضف بون استلام أو منتجات.',
       );
   String get noAvailableBrs => _t(
         'Aucun BR non facturé pour ce fournisseur.',
-        'لا يوجد أذن استلام غير مفوتر لهذا المورد.',
+        'لا يوجد بون استلام غير مفوتر لهذا المورد.',
       );
   String get fournisseurLockedByBr => _t(
         'Retirez les BR liés pour changer de fournisseur.',
-        'احذف أذون الاستلام المرتبطة لتغيير المورد.',
+        'احذف بون الاستلام المرتبط لتغيير المورد.',
       );
-  String get colBrs => _t('BR', 'أذون الاستلام');
+  String get colBrs => _t('BR', 'بون الاستلام');
 
   // Achats — avoirs fournisseur
   String get searchAvoirFournisseur =>
       _t('Rechercher numéro, fournisseur, motif…', 'بحث برقم، مورد، سبب…');
   String get emptyAvoirFournisseur =>
-      _t('Aucun avoir fournisseur.', 'لا يوجد إشعار دائن للمورد.');
+      _t('Aucun avoir fournisseur.', 'لا يوجد بون إرجاع للمورد.');
   String get avoirFournisseurNew =>
-      _t('Nouvel avoir fournisseur', 'إشعار دائن جديد للمورد');
+      _t('Nouvel avoir fournisseur', 'بون إرجاع جديد للمورد');
   String get avoirFournisseurSaved =>
-      _t('Avoir fournisseur enregistré.', 'تم حفظ الإشعار الدائن للمورد.');
+      _t('Avoir fournisseur enregistré.', 'تم حفظ بون الإرجاع للمورد.');
   String get fieldMotif => _t('Motif', 'السبب');
   String get fieldRetourMarchandise =>
       _t('Retour de marchandise', 'إرجاع البضاعة');
@@ -348,19 +348,19 @@ class AppStrings {
   // Distribution — bons charge / décharge
   String get searchBon => _t('Rechercher numéro, vendeur…', 'بحث برقم، بائع…');
   String get emptyBonCharge =>
-      _t('Aucun bon de charge.', 'لا يوجد أذن شحن.');
+      _t('Aucun bon de charge.', 'لا يوجد بون شحن.');
   String get emptyBonDecharge =>
-      _t('Aucun bon de décharge.', 'لا يوجد أذن تفريغ.');
+      _t('Aucun bon de décharge.', 'لا يوجد بون تفريغ.');
   String deleteBonConfirm(String numero) => _t(
         'Supprimer $numero ?',
         'حذف $numero ؟',
       );
-  String get bonChargeNew => _t('Nouveau bon de charge', 'أذن شحن جديد');
-  String get bonDechargeNew => _t('Nouveau bon de décharge', 'أذن تفريغ جديد');
+  String get bonChargeNew => _t('Nouveau bon de charge', 'بون شحن جديد');
+  String get bonDechargeNew => _t('Nouveau bon de décharge', 'بون تفريغ جديد');
   String get bonChargeSaved =>
-      _t('Bon de charge enregistré.', 'تم حفظ أذن الشحن.');
+      _t('Bon de charge enregistré.', 'تم حفظ بون الشحن.');
   String get bonDechargeSaved =>
-      _t('Bon de décharge enregistré.', 'تم حفظ أذن التفريغ.');
+      _t('Bon de décharge enregistré.', 'تم حفظ بون التفريغ.');
   String get bonChargeFlow => _t(
         'Dépôt → véhicule du vendeur',
         'المستودع ← سيارة البائع',
