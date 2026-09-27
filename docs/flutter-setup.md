@@ -280,8 +280,7 @@ Modules: auth, tiers, stock, settings
 
 - [ ] Drift tables: `Users`, `Tiers`, `Categories`, `Produits`, `StockLocations`, `MouvementsStock`, `AppSettings`
 - [ ] Seed: default depot (`Dépôt principal`), default settings row
-- [ ] Services: `user_service`, `tiers_service`, `produit_service`, `stock_service`, `settings_service`
-- [ ] Workflow: `stock_movement_workflow`
+- [ ] Services: `user_service`, `tiers_service`, `produit_service`, `stock_location_service`, `stock_balance_service`, `stock_movement_service`, `settings_service`
 - [ ] UI: app shell, tiers list/detail, produits, stock movements, settings
 - [ ] Reference Peinture: `Modules/Tiers`, `Modules/Stock`, `Modules/Auth`
 
@@ -290,7 +289,7 @@ Modules: auth, tiers, stock, settings
 Modules: devis, commande_client, livraison
 
 - [ ] Tables: `Devis`, `BonsCommandeClient`, `BonsLivraison`, payments
-- [ ] Workflow: `bon_livraison_workflow`
+- [ ] Services: `devis_service`, `bon_commande_client_service`, `bon_livraison_service` (incl. validation, stock, payments)
 - [ ] UI: list + edit pages for each document
 - [ ] Reference Peinture: `Modules/Devis`, `Modules/CommandeClient`, `Modules/Livraison`
 
@@ -299,7 +298,7 @@ Modules: devis, commande_client, livraison
 Modules: facturation
 
 - [ ] Tables: `Factures`, `Avoirs` + line tables
-- [ ] Workflows: `facture_workflow`, `avoir_workflow`
+- [ ] Services: `facture_service`, `avoir_service`
 - [ ] Reference Peinture: `Modules/Facturation`
 
 ### Phase 4 — Purchases
@@ -307,13 +306,13 @@ Modules: facturation
 Modules: commande_fournisseur, reception, facture_fournisseur, avoir_fournisseur
 
 - [ ] Tables: supplier documents + payments
-- [ ] Workflows: `bon_reception_workflow`, `facture_fournisseur_workflow`
+- [ ] Services: `bon_reception_service`, `facture_fournisseur_service`, `avoir_fournisseur_service`
 - [ ] Reference Peinture: `Modules/CommandeFournisseur`, `Modules/Reception`, `Modules/FactureFournisseur`, `Modules/AvoirFournisseur`
 
 ### Phase 5 — Personnel & charges
 
 - [ ] Tables: `BonsCharge`, `BonsDecharge`, `RemisesCaisse`, `Charges`
-- [ ] Workflow: `bon_charge_workflow`
+- [ ] Services: `bon_charge_service`, `bon_decharge_service`, `remise_caisse_service`, `charge_service`
 - [ ] Reference Peinture: `Modules/Personnel`, `Modules/Charges`
 
 ### Phase 6 — Reporting & polish

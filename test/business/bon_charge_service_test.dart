@@ -2,13 +2,12 @@ import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fes_distribution/business/models/personnel_document_line.dart';
-import 'package:fes_distribution/business/services/bon_charge_service.dart';
-import 'package:fes_distribution/business/services/document_number_service.dart';
-import 'package:fes_distribution/business/services/stock_balance_service.dart';
-import 'package:fes_distribution/business/services/stock_location_service.dart';
-import 'package:fes_distribution/business/services/stock_movement_service.dart';
-import 'package:fes_distribution/business/services/user_service.dart';
-import 'package:fes_distribution/business/workflows/bon_charge_workflow.dart';
+import 'package:fes_distribution/business/services/distribution/bons_charge/bon_charge_service.dart';
+import 'package:fes_distribution/business/services/stock/parametres/document_number_service.dart';
+import 'package:fes_distribution/business/services/stock/stock/stock_balance_service.dart';
+import 'package:fes_distribution/business/services/stock/stock/stock_location_service.dart';
+import 'package:fes_distribution/business/services/stock/stock/stock_movement_service.dart';
+import 'package:fes_distribution/business/services/distribution/vendeurs/user_service.dart';
 import 'package:fes_distribution/db/app_database.dart';
 
 void main() {
@@ -56,14 +55,14 @@ void main() {
     );
     final virtualLoc = await locations.getOrCreateVirtualForUser(vendeur);
 
-    final workflow = BonChargeWorkflow(
+    final service = BonChargeService(
       db,
       DocumentNumberService(db),
       locations,
       StockMovementService(db, balance),
     );
 
-    await workflow.save(
+    await service.save(
       assignedToUserId: vendeur.id,
       depotLocationId: 1,
       date: DateTime.now(),
@@ -82,9 +81,9 @@ void main() {
     expect(await balance.getStock(productId, 1), 40);
     expect(await balance.getStock(productId, virtualLoc.id), 10);
 
-    final list = await BonChargeService(db).list();
+    final list = await service.list();
     expect(list, hasLength(1));
-    await workflow.delete(list.first.bon.id);
+    await service.delete(list.first.bon.id);
 
     expect(await balance.getStock(productId, 1), 50);
     expect(await balance.getStock(productId, virtualLoc.id), 0);

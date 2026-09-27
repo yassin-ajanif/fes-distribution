@@ -7,7 +7,7 @@ Flutter desktop clone of **Peinture distribution** using a simple **3-layer** st
 - **3 main folders only:** `ui/`, `business/`, `db/`
 - **No repository layer** — services call Drift directly
 - **No global DTO layer** — use business models; add UI list/edit models only when a screen needs them
-- **Workflows** for multi-step document and stock operations
+- **One service per entity/module** — all business logic of an entity (queries, save, validation, stock effects, payments) lives in one service class
 - **Drift + SQLite** for local-first storage
 
 ## Data Flow
@@ -15,7 +15,7 @@ Flutter desktop clone of **Peinture distribution** using a simple **3-layer** st
 ```text
 ui/page
   ↓
-business/service or workflow
+business/service
   ↓
 db/app_database + tables
 ```
@@ -24,8 +24,8 @@ Example:
 
 ```text
 ui/livraison/bl_edit_page.dart
-  → business/workflows/bon_livraison_workflow.dart
-    → business/services/bon_livraison_service.dart
+  → business/services/bon_livraison_service.dart   (save, validate, stock, payments)
+    → business/services/stock_movement_service.dart (shared stock engine)
       → db/app_database.dart
 ```
 
@@ -124,34 +124,35 @@ lib/
 │   │   ├── mode_paiement.dart
 │   │   ├── type_tiers.dart
 │   │   └── user_type.dart
-│   ├── services/
-│   │   ├── user_service.dart
-│   │   ├── tiers_service.dart
-│   │   ├── produit_service.dart
-│   │   ├── stock_service.dart
-│   │   ├── devis_service.dart
-│   │   ├── bon_commande_client_service.dart
-│   │   ├── bon_livraison_service.dart
-│   │   ├── facture_service.dart
-│   │   ├── avoir_service.dart
-│   │   ├── bon_commande_service.dart
-│   │   ├── bon_reception_service.dart
-│   │   ├── facture_fournisseur_service.dart
-│   │   ├── avoir_fournisseur_service.dart
-│   │   ├── charge_service.dart
-│   │   ├── bon_charge_service.dart
-│   │   ├── bon_decharge_service.dart
-│   │   ├── remise_caisse_service.dart
-│   │   ├── settings_service.dart
-│   │   ├── document_number_service.dart
-│   │   ├── pdf_service.dart
-│   │   └── backup_service.dart
-│   ├── workflows/
-│   │   ├── bon_livraison_workflow.dart
-│   │   ├── stock_movement_workflow.dart
-│   │   ├── facture_workflow.dart
-│   │   ├── bon_reception_workflow.dart
-│   │   └── bon_charge_workflow.dart
+│   ├── services/                      # mirrors the sidebar: section → menu item
+│   │   ├── distribution/              # sidebar: Distribution
+│   │   │   ├── vendeurs/
+│   │   │   │   ├── user_service.dart
+│   │   │   │   └── vendeur_stock_service.dart
+│   │   │   ├── bons_charge/
+│   │   │   │   └── bon_charge_service.dart
+│   │   │   └── bons_decharge/
+│   │   │       └── bon_decharge_service.dart
+│   │   ├── ventes/                    # sidebar: Ventes
+│   │   │   ├── bons_livraison/bon_livraison_service.dart
+│   │   │   ├── factures/facture_service.dart
+│   │   │   └── avoirs/avoir_service.dart
+│   │   ├── achats/                    # sidebar: Achats
+│   │   │   ├── bons_reception/bon_reception_service.dart
+│   │   │   ├── factures_fournisseur/facture_fournisseur_service.dart
+│   │   │   └── avoirs_fournisseur/avoir_fournisseur_service.dart
+│   │   └── stock/                     # sidebar: Stock & administration
+│   │       ├── stock/                 # menu item "Stock"
+│   │       │   ├── stock_location_service.dart
+│   │       │   ├── stock_balance_service.dart
+│   │       │   └── stock_movement_service.dart
+│   │       ├── produits/
+│   │       │   ├── produit_service.dart
+│   │       │   └── categorie_service.dart
+│   │       ├── rapports/report_service.dart
+│   │       └── parametres/
+│   │           ├── app_settings_service.dart
+│   │           └── document_number_service.dart
 │   └── mappers/
 │       ├── tier_mapper.dart
 │       ├── produit_mapper.dart
@@ -223,12 +224,11 @@ Screens, widgets, routing, theme, and screen-level state.
 
 ### `business/` — Application logic
 
-Models, services, workflows, enums, and mappers.
+Models, services, enums, and mappers.
 
 **Contains:**
 - business models (`Tier`, `BonLivraison`, etc.)
-- CRUD and query logic in services
-- multi-step operations in workflows
+- one service per entity holding all its logic (CRUD, queries, validation, multi-table transactions)
 - mappers between Drift rows and business models
 - shared helpers (PDF, document numbering, backup)
 
@@ -276,28 +276,22 @@ Add a small UI model inside a feature folder only when a list screen needs extra
 
 ---
 
-## Services vs Workflows
+## Services
 
-### Services
+**One service per entity/module.** All business logic of that entity goes in its service: list/get, save (header + lines), validation, delete, and multi-table operations (stock movements, payments, status updates), each inside a Drift transaction.
 
-One service per module. Handles CRUD, queries, and simple operations.
+There is **no separate `workflows/` folder** — do not split an entity's logic across several classes.
 
 Examples:
 - `tiers_service.dart` — list, get, save, delete tiers
-- `bon_livraison_service.dart` — load/save BL header and lines
-- `stock_service.dart` — query stock by location
+- `bon_livraison_service.dart` — load/save BL, validate, create stock movements, update payment status
+- `facture_service.dart` — list/save factures, generate facture from BL lines
+- `bon_charge_service.dart` — list/get, save (lines + stock depot → vendor), delete (stock back to depot)
+- `stock_movement_service.dart` — shared stock engine (adjustments, depot ↔ depot transfer, document resync) used by the document services
 
-### Workflows
+A service may call **shared** services (stock engine, document numbering, locations) but not another entity's service for that entity's own rules.
 
-Orchestrate multi-step business operations inside a Drift transaction.
-
-Examples:
-- `bon_livraison_workflow.dart` — validate BL, create stock movements, update payment status
-- `stock_movement_workflow.dart` — transfer stock depot → vendor
-- `facture_workflow.dart` — generate facture from BL lines
-- `bon_charge_workflow.dart` — load products onto vendor stock
-
-**Rule:** if an operation touches multiple tables, put it in a workflow, not in the UI.
+**Rule:** if an operation touches multiple tables, put it in the entity's service inside `db.transaction`, never in the UI.
 
 ---
 
@@ -381,7 +375,7 @@ await db.transaction(() async {
 });
 ```
 
-Put transaction orchestration in **workflows**, not in UI pages.
+Put transaction orchestration in the entity's **service**, not in UI pages.
 
 ---
 
@@ -392,7 +386,7 @@ Put transaction orchestration in **workflows**, not in UI pages.
 | `Modules/*/Views` | `ui/` |
 | `Modules/*/ViewModels` | UI page state / Riverpod providers |
 | `Modules/*/Services` | `business/services/` |
-| Workflow services | `business/workflows/` |
+| `*WorkflowService` (e.g. `BonLivraisonWorkflowService`) | merged into the entity service (`business/services/bon_livraison_service.dart`) |
 | `Modules/*/Models` | `business/models/` |
 | `Shared/Database/AppDbContext` | `db/app_database.dart` |
 | `Shared/Database/Migrations` | `db/migrations/` |
@@ -417,7 +411,6 @@ lib/
 │   ├── models/
 │   ├── enums/
 │   ├── services/
-│   ├── workflows/
 │   └── mappers/
 └── db/
     ├── app_database.dart
@@ -443,7 +436,7 @@ lib/
 |----------|--------|
 | Where does a screen go? | `ui/` |
 | Where does a button layout go? | `ui/` |
-| Where does "can I validate this BL?" go? | `business/workflows/` |
+| Where does "can I validate this BL?" go? | `business/services/bon_livraison_service.dart` |
 | Where does save/load logic go? | `business/services/` |
 | Where does a `BonLivraison` class go? | `business/models/` |
 | Where does a Drift table go? | `db/entities/` |

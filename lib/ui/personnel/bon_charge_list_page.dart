@@ -72,7 +72,7 @@ class _BonChargeListPageState extends ConsumerState<BonChargeListPage> {
 
     setState(() => _loading = true);
     try {
-      await ref.read(bonChargeWorkflowProvider).delete(item.bon.id);
+      await ref.read(bonChargeServiceProvider).delete(item.bon.id);
       _selected = null;
       await _load();
     } catch (e) {

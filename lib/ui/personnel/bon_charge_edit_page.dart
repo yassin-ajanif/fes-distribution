@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:fes_distribution/business/helpers/document_totals.dart';
 import 'package:fes_distribution/business/models/personnel_document_line.dart';
-import 'package:fes_distribution/business/services/stock_movement_service.dart';
+import 'package:fes_distribution/business/services/stock/stock/stock_movement_service.dart';
 import 'package:fes_distribution/db/app_database.dart';
 import 'package:fes_distribution/ui/common/confirm_dialog.dart';
 import 'package:fes_distribution/ui/common/formatters.dart';
@@ -183,7 +183,7 @@ class _BonChargeEditPageState extends ConsumerState<BonChargeEditPage> {
 
     setState(() => _saving = true);
     try {
-      final id = await ref.read(bonChargeWorkflowProvider).save(
+      final id = await ref.read(bonChargeServiceProvider).save(
             id: widget.bonId,
             assignedToUserId: _assignedToUserId!,
             depotLocationId: _depotLocationId!,
@@ -220,7 +220,7 @@ class _BonChargeEditPageState extends ConsumerState<BonChargeEditPage> {
 
     setState(() => _saving = true);
     try {
-      await ref.read(bonChargeWorkflowProvider).delete(widget.bonId!);
+      await ref.read(bonChargeServiceProvider).delete(widget.bonId!);
       if (mounted) context.pop();
     } catch (e) {
       if (mounted) {

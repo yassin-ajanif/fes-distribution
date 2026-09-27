@@ -79,4 +79,39 @@ class StockLocationService {
     final all = await getActiveLocations();
     return all.where((l) => !l.isVirtual).toList();
   }
+
+  Future<StockLocation> createPhysicalLocation(
+    String nom, {
+    int? createdByUserId,
+  }) async {
+    final trimmed = nom.trim();
+    if (trimmed.isEmpty) {
+      throw ArgumentError('Le nom du dépôt est obligatoire.');
+    }
+
+    final duplicate = await (_db.select(_db.stockLocations)
+          ..where(
+            (l) =>
+                l.isVirtual.equals(false) &
+                l.nom.lower().equals(trimmed.toLowerCase()),
+          ))
+        .getSingleOrNull();
+    if (duplicate != null) {
+      throw StateError('Un dépôt porte déjà ce nom.');
+    }
+
+    final now = DateTime.now().toUtc();
+    final id = await _db.into(_db.stockLocations).insert(
+          StockLocationsCompanion.insert(
+            nom: trimmed,
+            isVirtual: const Value(false),
+            actif: const Value(true),
+            createdAt: now,
+            updatedAt: now,
+            createdByUserId: Value(createdByUserId),
+          ),
+        );
+    return await (_db.select(_db.stockLocations)..where((l) => l.id.equals(id)))
+        .getSingle();
+  }
 }

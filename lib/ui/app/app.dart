@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fes_distribution/db/app_database.dart';
-import 'package:fes_distribution/ui/app/router.dart';
 import 'package:fes_distribution/ui/l10n/app_language.dart';
 import 'package:fes_distribution/ui/l10n/app_strings.dart';
 import 'package:fes_distribution/ui/l10n/strings_scope.dart';

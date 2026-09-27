@@ -9,7 +9,7 @@ This Flutter project is a clone of **Peinture distribution**. Follow the docs an
 
 ## Required reading (before structural or feature work)
 
-1. `docs/architecture.md` — folder layout, layers, services vs workflows
+1. `docs/architecture.md` — folder layout, layers, one service per entity
 2. `docs/database-design.md` — tables, relationships, enums, document flows
 3. `docs/flutter-setup.md` — Flutter dependencies, Drift setup, bootstrap, roadmap
 
@@ -31,22 +31,24 @@ Use **only 3 top-level folders** under `lib/`:
 
 ```text
 ui/        → pages, widgets, routing, theme
-business/  → models, enums, services, workflows, mappers
+business/  → models, enums, services, mappers
 db/        → Drift tables, app_database, migrations, connection
 ```
 
-**Data flow:** `ui → business (service/workflow) → db (Drift)`
+**Data flow:** `ui → business/services → db (Drift)`
 
 ### Do
 
-- Put CRUD/query logic in `business/services/`
-- Put multi-step document/stock/payment rules in `business/workflows/`
+- **One service per entity/module**: put ALL of an entity's business logic in its service (e.g. `bon_charge_service.dart` = list, get, save, validate, stock effects, delete)
+- Shared engines (stock movements, locations, document numbers) are their own services and are injected into entity services
+- Services folder mirrors the sidebar: `business/services/<section>/<menu item>/` with sections `distribution`, `ventes`, `achats`, `stock` only (e.g. `ventes/bons_livraison/`, `stock/parametres/`) — see `docs/architecture.md`
 - Map Drift rows ↔ business models in `business/mappers/`
-- Run multi-table updates inside Drift transactions (in workflows)
+- Run multi-table updates inside Drift transactions in the entity's service
 - Use Drift + SQLite for persistence
 
 ### Do not
 
+- Add a `workflows/` folder or split one entity's logic across several classes
 - Add a `repositories/` layer
 - Add a global `dto/` layer (optional UI list models inside `ui/` only when needed)
 - Put business rules or Drift code in `ui/`
@@ -63,8 +65,7 @@ Before implementing a feature, read the matching C# module:
 
 | Flutter area | Peinture reference |
 |--------------|-------------------|
-| `business/services/*` | `Modules/*/Services/*Service.cs` |
-| `business/workflows/*` | `Modules/*/Services/*WorkflowService.cs` |
+| `business/services/*` | `Modules/*/Services/*Service.cs` **and** `*WorkflowService.cs` (merged into the entity's service) |
 | `ui/*` | `Modules/*/Views/*`, `Modules/*/ViewModels/*` |
 | `db/entities/*` | `Shared/Database/AppDbContext.cs`, `Modules/*/Models/*` |
 
@@ -97,6 +98,6 @@ When unsure about behavior, **read the Peinture source first** — do not guess.
 
 1. Check `docs/architecture.md` for file placement
 2. Check `docs/database-design.md` for schema
-3. Read the corresponding Peinture distribution service/workflow/viewmodel
+3. Read the corresponding Peinture distribution service/workflow service/viewmodel
 4. Implement in `business/` first, then wire `ui/`
 5. Keep changes scoped to the requested module

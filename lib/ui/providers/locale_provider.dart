@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:fes_distribution/business/services/app_settings_service.dart';
+import 'package:fes_distribution/business/services/stock/parametres/app_settings_service.dart';
 import 'package:fes_distribution/ui/l10n/app_language.dart';
 import 'package:fes_distribution/ui/providers/service_providers.dart';
 

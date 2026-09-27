@@ -1,6 +1,6 @@
 import 'package:drift/drift.dart';
 import 'package:fes_distribution/business/enums/user_type.dart';
-import 'package:fes_distribution/business/services/stock_location_service.dart';
+import 'package:fes_distribution/business/services/stock/stock/stock_location_service.dart';
 import 'package:fes_distribution/db/app_database.dart';
 import 'package:fes_distribution/db/db_seeder.dart';
 

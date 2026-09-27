@@ -107,14 +107,75 @@ class AppStrings {
   String get searchStock =>
       _t('Rechercher référence, désignation…', 'بحث بالمرجع، التسمية…');
   String get emptyStock => _t(
-        'Aucun produit en stock.\nLe module stock sera connecté prochainement.',
-        'لا يوجد منتج في المخزون.\nسيتم ربط وحدة المخزون قريباً.',
+        'Aucun produit actif.\nAjoutez des produits dans « Produits ».',
+        'لا يوجد منتج نشط.\nأضف منتجات من « المنتجات ».',
       );
   String get searchProduits =>
       _t('Rechercher référence, code-barres…', 'بحث بالمرجع، الرمز…');
   String get emptyProduits => _t(
-        'Aucun produit.\nLe catalogue produits sera connecté prochainement.',
-        'لا يوجد منتج.\nسيتم ربط فهرس المنتجات قريباً.',
+        'Aucun produit.\nAppuyez sur « Nouveau » pour en ajouter.',
+        'لا يوجد منتج.\nاضغط على « جديد » لإضافة منتج.',
+      );
+
+  // Produits
+  String get produitNew => _t('Nouveau produit', 'منتج جديد');
+  String get produitSaved => _t('Produit enregistré.', 'تم حفظ المنتج.');
+  String get sectionIdentification => _t('Identification', 'التعريف');
+  String get sectionPrix => _t('Prix & TVA', 'الأسعار والضريبة');
+  String get fieldReference => _t('Référence', 'المرجع');
+  String get fieldDesignation => _t('Désignation', 'التسمية');
+  String get fieldCodeBarre => _t('Code-barres', 'الرمز الشريطي');
+  String get fieldUnite => _t('Unité', 'الوحدة');
+  String get fieldPrixAchat => _t('Prix d\'achat HT', 'سعر الشراء بدون ضريبة');
+  String get fieldPrixVente => _t('Prix de vente HT', 'سعر البيع بدون ضريبة');
+  String get fieldTva => _t('TVA (%)', 'الضريبة (%)');
+  String get fieldStockMin => _t('Stock minimum', 'الحد الأدنى للمخزون');
+  String get fieldCategorie => _t('Catégorie', 'الفئة');
+  String get fieldActif => _t('Actif', 'نشط');
+  String get fieldName => _t('Nom', 'الاسم');
+  String get noCategorie => _t('Aucune', 'بدون');
+  String get newCategorie => _t('Nouvelle catégorie', 'فئة جديدة');
+  String get inactive => _t('Inactif', 'غير نشط');
+  String get requiredField => _t('Champ obligatoire', 'حقل إلزامي');
+  String get invalidNumber => _t('Nombre invalide', 'رقم غير صالح');
+  String get stockDepots => _t('Stock dépôts', 'مخزون المستودعات');
+
+  // Stock
+  String get stockLocation => _t('Emplacement', 'الموقع');
+  String get locationPhysical => _t('Dépôt', 'مستودع');
+  String get locationVirtual => _t('Vendeur', 'بائع');
+  String get newDepot => _t('Nouveau dépôt', 'مستودع جديد');
+  String get depotCreated => _t('Dépôt créé.', 'تم إنشاء المستودع.');
+  String get adjustStock => _t('Ajuster le stock', 'تعديل المخزون');
+  String get adjustDelta =>
+      _t('Variation (+ ajoute, − retire)', 'التغيير (+ إضافة، − سحب)');
+  String get adjustMotif => _t('Motif', 'السبب');
+  String get adjustDone => _t('Stock ajusté.', 'تم تعديل المخزون.');
+  String get currentStock => _t('Stock actuel', 'المخزون الحالي');
+  String get transfer => _t('Transfert', 'تحويل');
+  String get transferTitle =>
+      _t('Transfert entre dépôts', 'تحويل بين المستودعات');
+  String get fromDepot => _t('Dépôt source', 'المستودع المصدر');
+  String get toDepot => _t('Dépôt destination', 'المستودع الوجهة');
+  String get addProduct => _t('Ajouter un produit', 'إضافة منتج');
+  String get searchProduct =>
+      _t('Rechercher un produit…', 'بحث عن منتج…');
+  String get noLines => _t(
+        'Aucune ligne — ajoutez un produit ci-dessus.',
+        'لا توجد أسطر — أضف منتجاً أعلاه.',
+      );
+  String get quantity => _t('Quantité', 'الكمية');
+  String get note => _t('Note', 'ملاحظة');
+  String available(String qty) => _t('Dispo : $qty', 'المتوفر: $qty');
+  String get transferDone =>
+      _t('Transfert enregistré.', 'تم تسجيل التحويل.');
+  String get needTwoDepots => _t(
+        'Créez au moins deux dépôts (page Stock → Nouveau dépôt) pour faire un transfert.',
+        'أنشئ مستودعين على الأقل (صفحة المخزون ← مستودع جديد) لإجراء تحويل.',
+      );
+  String shortageLine(String ref, String requested, String available) => _t(
+        '$ref — demandé $requested, dispo $available',
+        '$ref — مطلوب $requested، متوفر $available',
       );
   String get searchRapports =>
       _t('Rechercher un rapport…', 'بحث عن تقرير…');

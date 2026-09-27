@@ -1,6 +1,6 @@
 import 'package:drift/drift.dart';
 import 'package:fes_distribution/business/models/stock_shortage.dart';
-import 'package:fes_distribution/business/services/stock_balance_service.dart';
+import 'package:fes_distribution/business/services/stock/stock/stock_balance_service.dart';
 import 'package:fes_distribution/db/app_database.dart';
 
 /// Stock transfer engine aligned with Peinture [StockMovementService].
@@ -15,6 +15,96 @@ class StockMovementService {
 
   static const origineTypeBonCharge = 'BCH';
   static const origineTypeBonDecharge = 'BDH';
+  static const origineTypeInventaire = 'Inventaire';
+  static const origineTypeTransfert = 'Transfert';
+
+  /// Manual stock correction at one location (Peinture "Ajustement").
+  /// Positive [delta] adds stock, negative removes it.
+  Future<void> applyAdjustment({
+    required int produitId,
+    required int locationId,
+    required double delta,
+    String note = '',
+    int? createdByUserId,
+  }) async {
+    if (delta == 0) {
+      throw ArgumentError('La variation ne peut pas être nulle.');
+    }
+    final motif = note.trim();
+    await _db.transaction(() async {
+      await _applyLocationMovement(
+        produitId: produitId,
+        fromId: delta < 0 ? locationId : null,
+        toId: delta > 0 ? locationId : null,
+        quantite: delta.abs(),
+        origineType: origineTypeInventaire,
+        origineId: null,
+        note: motif.isEmpty ? 'Inventaire' : 'Inventaire — $motif',
+        createdByUserId: createdByUserId,
+      );
+    });
+  }
+
+  /// Moves goods between two physical depots. Each product becomes one
+  /// `Transfert` row in `MouvementsStock` (no document table).
+  Future<void> transfer({
+    required int fromLocationId,
+    required int toLocationId,
+    required Iterable<({int produitId, double quantite})> lines,
+    String note = '',
+    int? createdByUserId,
+  }) async {
+    if (fromLocationId == toLocationId) {
+      throw StateError(
+        'Le dépôt source et le dépôt destination doivent être différents.',
+      );
+    }
+
+    final qtyByProduit = <int, double>{};
+    for (final line in lines) {
+      if (line.produitId <= 0 || line.quantite <= 0) continue;
+      qtyByProduit[line.produitId] =
+          (qtyByProduit[line.produitId] ?? 0) + line.quantite;
+    }
+    if (qtyByProduit.isEmpty) {
+      throw StateError('Ajoutez au moins une ligne avec quantité.');
+    }
+
+    await _db.transaction(() async {
+      final from = await _requirePhysicalLocation(fromLocationId);
+      final to = await _requirePhysicalLocation(toLocationId);
+      final motif = note.trim();
+      final detail = 'Transfert ${from.nom} → ${to.nom}';
+
+      for (final entry in qtyByProduit.entries) {
+        await _applyLocationMovement(
+          produitId: entry.key,
+          fromId: from.id,
+          toId: to.id,
+          quantite: entry.value,
+          origineType: origineTypeTransfert,
+          origineId: null,
+          note: motif.isEmpty ? detail : '$detail — $motif',
+          createdByUserId: createdByUserId,
+        );
+      }
+    });
+  }
+
+  Future<StockLocation> _requirePhysicalLocation(int locationId) async {
+    final location = await (_db.select(_db.stockLocations)
+          ..where((l) => l.id.equals(locationId) & l.actif.equals(true)))
+        .getSingleOrNull();
+    if (location == null) {
+      throw StateError('Emplacement de stock inactif ou introuvable.');
+    }
+    if (location.isVirtual) {
+      throw StateError(
+        'Utilisez un bon de charge / décharge pour le stock d\'un vendeur.',
+      );
+    }
+    return location;
+  }
 
   Future<void> resyncBonChargeStock({
     required int bonChargeId,
@@ -261,20 +351,26 @@ class StockMovementService {
 
   Future<void> _applyLocationMovement({
     required int produitId,
-    required int fromId,
-    required int toId,
+    required int? fromId,
+    required int? toId,
     required double quantite,
     required String origineType,
-    required int origineId,
+    required int? origineId,
     required String note,
     int? createdByUserId,
   }) async {
     if (quantite <= 0) {
       throw ArgumentError.value(quantite, 'quantite');
     }
+    if (fromId == null && toId == null) {
+      throw ArgumentError('From and To cannot both be null.');
+    }
 
-    final fromAvant = await _balance.getStock(produitId, fromId);
-    final toAvant = await _balance.getStock(produitId, toId);
+    final fromApres = fromId == null
+        ? null
+        : await _balance.getStock(produitId, fromId) - quantite;
+    final toApres =
+        toId == null ? null : await _balance.getStock(produitId, toId) + quantite;
     final now = DateTime.now().toUtc();
 
     await _db.into(_db.mouvementsStock).insert(
@@ -283,8 +379,8 @@ class StockMovementService {
             fromLocationId: Value(fromId),
             toLocationId: Value(toId),
             quantite: quantite,
-            fromApres: Value(fromAvant - quantite),
-            toApres: Value(toAvant + quantite),
+            fromApres: Value(fromApres),
+            toApres: Value(toApres),
             origineType: origineType,
             origineId: Value(origineId),
             note: Value(note),

@@ -1,6 +1,6 @@
 import 'package:fes_distribution/business/models/vendeur_stock_line.dart';
-import 'package:fes_distribution/business/services/stock_balance_service.dart';
-import 'package:fes_distribution/business/services/stock_location_service.dart';
+import 'package:fes_distribution/business/services/stock/stock/stock_balance_service.dart';
+import 'package:fes_distribution/business/services/stock/stock/stock_location_service.dart';
 import 'package:fes_distribution/db/app_database.dart';
 
 class VendeurStockService {

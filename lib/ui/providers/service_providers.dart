@@ -1,15 +1,14 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:fes_distribution/business/services/bon_charge_service.dart';
-import 'package:fes_distribution/business/services/bon_decharge_service.dart';
-import 'package:fes_distribution/business/services/document_number_service.dart';
-import 'package:fes_distribution/business/services/produit_service.dart';
-import 'package:fes_distribution/business/services/stock_balance_service.dart';
-import 'package:fes_distribution/business/services/stock_location_service.dart';
-import 'package:fes_distribution/business/services/stock_movement_service.dart';
-import 'package:fes_distribution/business/services/user_service.dart';
-import 'package:fes_distribution/business/services/vendeur_stock_service.dart';
-import 'package:fes_distribution/business/workflows/bon_charge_workflow.dart';
-import 'package:fes_distribution/business/workflows/bon_decharge_workflow.dart';
+import 'package:fes_distribution/business/services/distribution/bons_charge/bon_charge_service.dart';
+import 'package:fes_distribution/business/services/distribution/bons_decharge/bon_decharge_service.dart';
+import 'package:fes_distribution/business/services/stock/produits/categorie_service.dart';
+import 'package:fes_distribution/business/services/stock/parametres/document_number_service.dart';
+import 'package:fes_distribution/business/services/stock/produits/produit_service.dart';
+import 'package:fes_distribution/business/services/stock/stock/stock_balance_service.dart';
+import 'package:fes_distribution/business/services/stock/stock/stock_location_service.dart';
+import 'package:fes_distribution/business/services/stock/stock/stock_movement_service.dart';
+import 'package:fes_distribution/business/services/distribution/vendeurs/user_service.dart';
+import 'package:fes_distribution/business/services/distribution/vendeurs/vendeur_stock_service.dart';
 import 'package:fes_distribution/db/app_database.dart';
 
 final databaseProvider = Provider<AppDatabase>((ref) {
@@ -46,6 +45,10 @@ final produitServiceProvider = Provider(
   (ref) => ProduitService(ref.watch(databaseProvider)),
 );
 
+final categorieServiceProvider = Provider(
+  (ref) => CategorieService(ref.watch(databaseProvider)),
+);
+
 final vendeurStockServiceProvider = Provider(
   (ref) => VendeurStockService(
     ref.watch(databaseProvider),
@@ -55,15 +58,7 @@ final vendeurStockServiceProvider = Provider(
 );
 
 final bonChargeServiceProvider = Provider(
-  (ref) => BonChargeService(ref.watch(databaseProvider)),
-);
-
-final bonDechargeServiceProvider = Provider(
-  (ref) => BonDechargeService(ref.watch(databaseProvider)),
-);
-
-final bonChargeWorkflowProvider = Provider(
-  (ref) => BonChargeWorkflow(
+  (ref) => BonChargeService(
     ref.watch(databaseProvider),
     ref.watch(documentNumberServiceProvider),
     ref.watch(stockLocationServiceProvider),
@@ -71,8 +66,8 @@ final bonChargeWorkflowProvider = Provider(
   ),
 );
 
-final bonDechargeWorkflowProvider = Provider(
-  (ref) => BonDechargeWorkflow(
+final bonDechargeServiceProvider = Provider(
+  (ref) => BonDechargeService(
     ref.watch(databaseProvider),
     ref.watch(documentNumberServiceProvider),
     ref.watch(stockLocationServiceProvider),

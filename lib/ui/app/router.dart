@@ -14,8 +14,10 @@ import 'package:fes_distribution/ui/livraison/bl_list_page.dart';
 import 'package:fes_distribution/ui/reception/br_list_page.dart';
 import 'package:fes_distribution/ui/reporting/reports_page.dart';
 import 'package:fes_distribution/ui/settings/settings_page.dart';
+import 'package:fes_distribution/ui/stock/produit_edit_page.dart';
 import 'package:fes_distribution/ui/stock/produits_page.dart';
 import 'package:fes_distribution/ui/stock/stock_page.dart';
+import 'package:fes_distribution/ui/stock/stock_transfer_page.dart';
 import 'package:fes_distribution/ui/personnel/vendeurs_page.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -134,12 +136,34 @@ GoRouter createRouter() {
             pageBuilder: (context, state) => const NoTransitionPage(
               child: ProduitsPage(),
             ),
+            routes: [
+              GoRoute(
+                path: 'new',
+                parentNavigatorKey: _rootNavigatorKey,
+                builder: (context, state) => const ProduitEditPage(),
+              ),
+              GoRoute(
+                path: ':id',
+                parentNavigatorKey: _rootNavigatorKey,
+                builder: (context, state) {
+                  final id = int.parse(state.pathParameters['id']!);
+                  return ProduitEditPage(produitId: id);
+                },
+              ),
+            ],
           ),
           GoRoute(
             path: '/stock',
             pageBuilder: (context, state) => const NoTransitionPage(
               child: StockPage(),
             ),
+            routes: [
+              GoRoute(
+                path: 'transfert',
+                parentNavigatorKey: _rootNavigatorKey,
+                builder: (context, state) => const StockTransferPage(),
+              ),
+            ],
           ),
           GoRoute(
             path: '/admin/rapports',
