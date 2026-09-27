@@ -30,6 +30,14 @@ class DocumentNumberService {
         prefix: 'BL',
       );
 
+  Future<String> nextFacture() => _nextFromDb(
+        loadNumeros: () async {
+          final rows = await _db.select(_db.factures).get();
+          return rows.map((r) => r.numero).toList();
+        },
+        prefix: 'FAC',
+      );
+
   Future<String> _nextFromDb({
     required Future<List<String>> Function() loadNumeros,
     required String prefix,

@@ -124,10 +124,35 @@ class AppStrings {
   String get modeEffet => _t('Effet', 'كمبيالة');
   String get searchFacture =>
       _t('Rechercher numéro, client…', 'بحث برقم، عميل…');
-  String get emptyFacture => _t(
-        'Aucune facture.\nLe module ventes sera connecté prochainement.',
-        'لا توجد فاتورة.\nسيتم ربط وحدة المبيعات قريباً.',
+  String get emptyFacture => _t('Aucune facture.', 'لا توجد فاتورة.');
+
+  // Ventes — factures
+  String get factureNew => _t('Nouvelle facture', 'فاتورة جديدة');
+  String get factureSaved => _t('Facture enregistrée.', 'تم حفظ الفاتورة.');
+  String get fieldEstPayee => _t('Facture payée', 'فاتورة مدفوعة');
+  String get fieldBonCommandeRef =>
+      _t('Réf. bon de commande client', 'مرجع طلبية العميل');
+  String get linkedBls => _t('Bons de livraison facturés', 'أذون التسليم المفوترة');
+  String get addBls => _t('Ajouter des BL', 'إضافة أذون تسليم');
+  String get noLinkedBl => _t(
+        'Aucun BL lié. Ajoutez des BL ou des produits du catalogue.',
+        'لا يوجد أذن تسليم مرتبط. أضف أذون تسليم أو منتجات.',
       );
+  String get noAvailableBls => _t(
+        'Aucun BL non facturé pour ce client.',
+        'لا يوجد أذن تسليم غير مفوتر لهذا العميل.',
+      );
+  String get clientLockedByBl => _t(
+        'Retirez les BL liés pour changer de client.',
+        'احذف أذون التسليم المرتبطة لتغيير العميل.',
+      );
+  String get colEcheance => _t('Échéance', 'الاستحقاق');
+  String get colBls => _t('BL', 'أذون التسليم');
+  String get statusEnRetard => _t('En retard', 'متأخرة');
+  String get filterAll => _t('Toutes', 'الكل');
+  String blInvoiced(String numero) =>
+      _t('Facturé sur $numero', 'مفوتر في $numero');
+  String get actionInvoice => _t('Facturer', 'فوترة');
   String get searchAvoir =>
       _t('Rechercher numéro, client…', 'بحث برقم، عميل…');
   String get emptyAvoir => _t(

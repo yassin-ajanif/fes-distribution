@@ -88,11 +88,17 @@ class BonLivraisonService {
         BonsLivraisonData bl,
         List<DocumentLine> lines,
         List<BonLivraisonPaiement> paiements,
+        String? factureNumero,
       })?> getById(int id) async {
     final bl = await (_db.select(_db.bonsLivraison)
           ..where((b) => b.id.equals(id)))
         .getSingleOrNull();
     if (bl == null) return null;
+    final facture = bl.factureId == null
+        ? null
+        : await (_db.select(_db.factures)
+              ..where((f) => f.id.equals(bl.factureId!)))
+            .getSingleOrNull();
 
     final lineRows = await (_db.select(_db.bonLivraisonLignes)
           ..where((l) => l.bLId.equals(id))
@@ -137,6 +143,7 @@ class BonLivraisonService {
             reference: p.reference,
           ),
       ],
+      factureNumero: facture?.numero,
     );
   }
 

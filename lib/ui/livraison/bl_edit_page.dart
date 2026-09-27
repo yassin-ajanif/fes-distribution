@@ -12,6 +12,7 @@ import 'package:fes_distribution/ui/common/app_bar_save_button.dart';
 import 'package:fes_distribution/ui/common/confirm_dialog.dart';
 import 'package:fes_distribution/ui/common/formatters.dart';
 import 'package:fes_distribution/ui/common/loading_view.dart';
+import 'package:fes_distribution/ui/common/new_client_dialog.dart';
 import 'package:fes_distribution/ui/l10n/app_strings.dart';
 import 'package:fes_distribution/ui/l10n/strings_scope.dart';
 import 'package:fes_distribution/ui/common/document_lines_table.dart';
@@ -43,6 +44,7 @@ class _BlEditPageState extends ConsumerState<BlEditPage> {
   bool _saving = false;
 
   String _numero = '';
+  String? _factureNumero;
   DateTime _date = DateTime.now();
   DateTime _dateEcheance = DateTime.now().add(const Duration(days: 30));
   final _noteController = TextEditingController();
@@ -119,7 +121,8 @@ class _BlEditPageState extends ConsumerState<BlEditPage> {
         _dateEcheance = bl.dateEcheance;
         _clientId = bl.clientId;
         _vendeurId = vendeurs.any((u) => u.id == bl.vendeurId) ? bl.vendeurId : null;
-        _remiseController.text = _formatInput(bl.remiseGlobale);
+        _remiseController.text = formatInput(bl.remiseGlobale);
+        _factureNumero = doc.factureNumero;
         _noteController.text = bl.note;
         _lines = doc.lines;
         _paiements = doc.paiements;
@@ -196,10 +199,7 @@ class _BlEditPageState extends ConsumerState<BlEditPage> {
 
   Future<void> _newClient() async {
     final s = context.s;
-    final created = await showDialog<Tier>(
-      context: context,
-      builder: (_) => const _NewClientDialog(),
-    );
+    final created = await showNewClientDialog(context);
     if (created == null || !mounted) return;
     setState(() {
       _clients = [..._clients, created]
@@ -305,6 +305,12 @@ class _BlEditPageState extends ConsumerState<BlEditPage> {
     }
   }
 
+  Future<void> _invoice() async {
+    final factureId =
+        await context.push<int>('/ventes/factures/new?bl=${widget.blId}');
+    if (factureId != null && mounted) context.go('/ventes/factures');
+  }
+
   Future<void> _delete() async {
     final title = context.s.menuBl;
     final ok = await showConfirmDialog(
@@ -344,6 +350,12 @@ class _BlEditPageState extends ConsumerState<BlEditPage> {
         ),
         title: Text(_isNew ? s.blNew : _numero),
         actions: [
+          if (!_isNew && _factureNumero == null && !_loading)
+            IconButton(
+              tooltip: s.actionInvoice,
+              icon: const Icon(Icons.receipt_long_outlined),
+              onPressed: _saving ? null : _invoice,
+            ),
           if (!_isNew)
             IconButton(
               tooltip: s.actionDelete,
@@ -363,6 +375,7 @@ class _BlEditPageState extends ConsumerState<BlEditPage> {
               children: [
                 if (_vendeurs.isEmpty) _banner(s.noActiveVendeur),
                 if (_clients.isEmpty) _banner(s.noClient),
+                if (_factureNumero != null) _banner(s.blInvoiced(_factureNumero!)),
                 _buildHeader(context),
                 const SizedBox(height: 16),
                 _buildAddProduct(context),
@@ -641,95 +654,6 @@ class _BlEditPageState extends ConsumerState<BlEditPage> {
           ],
         ),
       ),
-    );
-  }
-}
-
-String _formatInput(double v) =>
-    v == v.roundToDouble() ? v.toStringAsFixed(0) : v.toString();
-
-class _NewClientDialog extends ConsumerStatefulWidget {
-  const _NewClientDialog();
-
-  @override
-  ConsumerState<_NewClientDialog> createState() => _NewClientDialogState();
-}
-
-class _NewClientDialogState extends ConsumerState<_NewClientDialog> {
-  final _formKey = GlobalKey<FormState>();
-  final _nom = TextEditingController();
-  final _telephone = TextEditingController();
-  final _ville = TextEditingController();
-  bool _saving = false;
-
-  @override
-  void dispose() {
-    _nom.dispose();
-    _telephone.dispose();
-    _ville.dispose();
-    super.dispose();
-  }
-
-  Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
-    setState(() => _saving = true);
-    try {
-      final client = await ref.read(tiersServiceProvider).createClient(
-            nom: _nom.text,
-            telephone: _telephone.text,
-            ville: _ville.text,
-          );
-      if (mounted) Navigator.of(context).pop(client);
-    } catch (e) {
-      if (mounted) {
-        await showErrorDialog(context, title: context.s.newClient, message: '$e');
-      }
-    } finally {
-      if (mounted) setState(() => _saving = false);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final s = context.s;
-    return AlertDialog(
-      title: Text(s.newClient),
-      content: Form(
-        key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextFormField(
-              controller: _nom,
-              autofocus: true,
-              decoration: InputDecoration(labelText: s.fieldName),
-              validator: (v) =>
-                  (v == null || v.trim().isEmpty) ? s.requiredField : null,
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _telephone,
-              decoration: InputDecoration(labelText: s.fieldTelephone),
-              keyboardType: TextInputType.phone,
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _ville,
-              decoration: InputDecoration(labelText: s.fieldVille),
-            ),
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: _saving ? null : () => Navigator.of(context).pop(),
-          child: Text(s.actionCancel),
-        ),
-        FilledButton(
-          onPressed: _saving ? null : _submit,
-          child: Text(s.actionSave),
-        ),
-      ],
     );
   }
 }

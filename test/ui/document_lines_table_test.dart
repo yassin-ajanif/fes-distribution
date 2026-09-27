@@ -70,4 +70,31 @@ void main() {
     expect(find.widgetWithText(TextField, '3'), findsOneWidget);
     expect(find.widgetWithText(TextField, 'Blanc'), findsNothing);
   });
+
+  testWidgets('facture lines: same product from two BLs, no Dispo', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: StringsScope(
+          strings: AppStrings(AppLanguage.french),
+          child: Scaffold(
+            body: SingleChildScrollView(
+              child: DocumentLinesTable(
+                lines: [
+                  DocumentLine(produitId: 1, reference: 'A', designation: 'BL1', quantite: 2, bonLivraisonId: 10),
+                  DocumentLine(produitId: 1, reference: 'A', designation: 'BL2', quantite: 3, bonLivraisonId: 11),
+                ],
+                onChanged: (_, _) {},
+                onRemoveAt: (_) {},
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(tester.takeException(), isNull);
+    expect(find.widgetWithText(TextField, 'BL1'), findsOneWidget);
+    expect(find.widgetWithText(TextField, 'BL2'), findsOneWidget);
+    expect(find.textContaining('Dispo'), findsNothing);
+  });
 }

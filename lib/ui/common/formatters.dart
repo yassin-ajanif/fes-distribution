@@ -7,3 +7,7 @@ final currencyFormat = NumberFormat.currency(locale: 'fr_FR', symbol: 'DH');
 
 String formatQty(double value) => numberFormat.format(value);
 String formatMoney(double value) => currencyFormat.format(value);
+
+/// Plain number for an editable text field ("12", "12.5").
+String formatInput(double v) =>
+    v == v.roundToDouble() ? v.toStringAsFixed(0) : v.toString();
