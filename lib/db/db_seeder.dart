@@ -8,20 +8,15 @@ class DbSeeder {
 
   static const defaultClientName = 'Client Comptoire';
   static const depotPrincipalNom = 'Dépôt principal';
-  static const depotPrincipalAdminPhone = 'DEPOT-PRINCIPAL';
-  static const depotPrincipalAdminName = 'admin';
 
-  static bool isDepotPrincipalAdminPhone(String phone) =>
-      phone.trim() == depotPrincipalAdminPhone;
-
-  static bool isDepotPrincipalAdmin(User user) =>
-      isDepotPrincipalAdminPhone(user.phone);
+  /// Pseudo-vendeur Peinture uses for counter sales from the depot.
+  /// FesDistribution sells only through vendeurs, so it is removed.
+  static const _legacyDepotAdminPhone = 'DEPOT-PRINCIPAL';
 
   static Future<void> seed(AppDatabase db) async {
     await _seedAppSettings(db);
     await _seedDefaultDepot(db);
     await _seedDefaultClient(db);
-    await _seedDepotPrincipalAdmin(db);
   }
 
   static Future<void> _seedAppSettings(AppDatabase db) async {
@@ -80,20 +75,14 @@ class DbSeeder {
         );
   }
 
-  static Future<void> _seedDepotPrincipalAdmin(AppDatabase db) async {
-    final existing = await (db.select(db.users)
-          ..where((t) => t.phone.equals(depotPrincipalAdminPhone)))
-        .getSingleOrNull();
-    if (existing != null) return;
-
-    await db.into(db.users).insert(
-          UsersCompanion.insert(
-            fullName: depotPrincipalAdminName,
-            phone: depotPrincipalAdminPhone,
-            userType: const Value('Admin'),
-            actif: const Value(true),
-            createdAt: DateTime.now().toUtc(),
-          ),
-        );
+  static Future<void> removeLegacyDepotAdmin(AppDatabase db) async {
+    try {
+      await (db.delete(db.users)
+            ..where((t) => t.phone.equals(_legacyDepotAdminPhone)))
+          .go();
+    } on Object {
+      // Still referenced by a document: keep the row. It is not a vendeur,
+      // so it never shows up in vendeur lists.
+    }
   }
 }

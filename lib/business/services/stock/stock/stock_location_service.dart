@@ -1,4 +1,5 @@
 import 'package:drift/drift.dart';
+import 'package:fes_distribution/business/enums/user_type.dart';
 import 'package:fes_distribution/db/app_database.dart';
 import 'package:fes_distribution/db/db_seeder.dart';
 
@@ -36,9 +37,11 @@ class StockLocationService {
         .getSingle();
   }
 
+  /// The vendeur's car. Sales happen only from vendeur stock, never from a
+  /// physical depot.
   Future<StockLocation> getOrCreateVirtualForUser(User user) async {
-    if (DbSeeder.isDepotPrincipalAdmin(user)) {
-      return getOrCreateDefaultDepot();
+    if (user.userType != UserType.vendeur) {
+      throw StateError('Seul un vendeur possède un stock véhicule.');
     }
 
     final existing = await (_db.select(_db.stockLocations)

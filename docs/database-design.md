@@ -114,9 +114,26 @@ BonCommande → BonReception → FactureFournisseur
 ### Personnel / vendor stock
 
 ```text
-Dépôt principal → BonCharge → Stock vendeur (virtual)
-Stock vendeur → BonDecharge / BonLivraison / RemiseCaisse
+Dépôt (physical) → BonCharge → Stock vendeur (virtual)
+Stock vendeur → BonDecharge → Dépôt (physical)
+Stock vendeur → BonLivraison (sale) / RemiseCaisse
 ```
+
+### Stock location rules (FesDistribution — differs from Peinture)
+
+**All sales go through vendeurs.** Physical depots never sell directly.
+
+| Operation | Physical depot | Vendeur stock (virtual) |
+|-----------|----------------|-------------------------|
+| Adjustment (`Inventaire`) | yes | yes (car count correction) |
+| Transfer (`Transfert`) | depot ↔ depot only | no |
+| BonCharge / BonDecharge | source / destination | destination / source |
+| BonLivraison (sale) | **never** | always — stock leaves the vendeur's car |
+| Avoir client (return) | never | goods return to the vendeur's car |
+| BonReception (purchase) | goods enter a depot | never |
+| AvoirFournisseur | goods leave a depot | never |
+
+Peinture seeds a pseudo-vendeur `admin` / phone `DEPOT-PRINCIPAL` so a BL can be sold from the depot. FesDistribution **does not** create it (existing rows are removed on open), and `BonsLivraison.VendeurId` must always reference a real vendeur.
 
 ---
 

@@ -54,6 +54,7 @@ db/        → Drift tables, app_database, migrations, connection
 - Put business rules or Drift code in `ui/`
 - Put Flutter widgets in `business/` or `db/`
 - Invent a new schema — match `docs/database-design.md`
+- Sell from a physical depot: **all sales go through vendeurs** (BL stock leaves the vendeur's virtual stock). Physical depots are for inventory only (receptions, transfers, adjustments, bon charge/décharge). Do not port Peinture's `DEPOT-PRINCIPAL` pseudo-vendeur — see "Stock location rules" in `docs/database-design.md`
 
 ## Business logic reference (source of truth)
 

@@ -59,6 +59,11 @@ class AppDatabase extends _$AppDatabase {
         onUpgrade: (m, from, to) async {
           // Future migrations go here.
         },
+        beforeOpen: (details) async {
+          if (!details.wasCreated) {
+            await DbSeeder.removeLegacyDepotAdmin(this);
+          }
+        },
       );
 
   Future<void> _createCustomIndexesAndConstraints() async {

@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:fes_distribution/ui/common/app_bar_save_button.dart';
 import 'package:fes_distribution/business/models/vendeur_stock_line.dart';
 import 'package:fes_distribution/db/app_database.dart';
-import 'package:fes_distribution/db/db_seeder.dart';
 import 'package:fes_distribution/ui/common/confirm_dialog.dart';
 import 'package:fes_distribution/ui/common/formatters.dart';
 import 'package:fes_distribution/ui/common/loading_view.dart';
@@ -102,10 +101,7 @@ class _VendeurDetailPageState extends ConsumerState<VendeurDetailPage> {
     }
   }
 
-  bool get _isDepotPrincipal =>
-      _user != null && DbSeeder.isDepotPrincipalAdmin(_user!);
-
-  bool get _ficheEditable => (widget.isNew || _user != null) && !_isDepotPrincipal;
+  bool get _ficheEditable => widget.isNew || _user != null;
 
   Future<void> _save() async {
     setState(() => _saving = true);
@@ -178,7 +174,7 @@ class _VendeurDetailPageState extends ConsumerState<VendeurDetailPage> {
             : null,
         title: Text(widget.isNew ? 'Nouveau vendeur' : (_user?.fullName ?? 'Vendeur')),
         actions: [
-          if (_user != null && !_isDepotPrincipal)
+          if (_user != null)
             IconButton(
               icon: const Icon(Icons.delete_outline),
               onPressed: _saving ? null : _delete,
@@ -226,7 +222,7 @@ class _VendeurDetailPageState extends ConsumerState<VendeurDetailPage> {
                       ),
                     ),
                   ),
-                  if (_user != null && !_isDepotPrincipal) ...[
+                  if (_user != null) ...[
                     const SizedBox(height: 20),
                     Text('Solde stock', style: Theme.of(context).textTheme.titleMedium),
                     const SizedBox(height: 8),

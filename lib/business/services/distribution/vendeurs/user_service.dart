@@ -2,7 +2,6 @@ import 'package:drift/drift.dart';
 import 'package:fes_distribution/business/enums/user_type.dart';
 import 'package:fes_distribution/business/services/stock/stock/stock_location_service.dart';
 import 'package:fes_distribution/db/app_database.dart';
-import 'package:fes_distribution/db/db_seeder.dart';
 
 class UserService {
   UserService(this._db, this._locations);
@@ -11,30 +10,18 @@ class UserService {
   final StockLocationService _locations;
 
   Future<List<User>> listVendeurs({String? search}) async {
-    final depotPhone = DbSeeder.depotPrincipalAdminPhone;
-    var query = _db.select(_db.users)
-      ..where(
-        (u) =>
-            u.userType.equals(UserType.vendeur) |
-            u.phone.equals(depotPhone),
-      );
+    final query = _db.select(_db.users)
+      ..where((u) => u.userType.equals(UserType.vendeur));
 
     if (search != null && search.trim().isNotEmpty) {
       final t = search.trim().toLowerCase();
-      query = _db.select(_db.users)
-        ..where(
-          (u) =>
-              (u.userType.equals(UserType.vendeur) |
-                  u.phone.equals(depotPhone)) &
-              (u.fullName.lower().like('%$t%') | u.phone.lower().like('%$t%')),
-        );
+      query.where(
+        (u) => u.fullName.lower().like('%$t%') | u.phone.lower().like('%$t%'),
+      );
     }
 
     final rows = await query.get();
     rows.sort((a, b) {
-      final aDepot = a.phone == depotPhone ? 0 : 1;
-      final bDepot = b.phone == depotPhone ? 0 : 1;
-      if (aDepot != bDepot) return aDepot.compareTo(bDepot);
       final nameCmp = a.fullName.compareTo(b.fullName);
       if (nameCmp != 0) return nameCmp;
       return a.phone.compareTo(b.phone);
@@ -44,18 +31,12 @@ class UserService {
 
   Future<List<User>> listActiveVendeurs() async {
     final rows = await listVendeurs();
-    return rows.where((u) => u.actif && u.userType == UserType.vendeur).toList();
+    return rows.where((u) => u.actif).toList();
   }
 
   Future<User?> getById(int id) async {
-    final depotPhone = DbSeeder.depotPrincipalAdminPhone;
     return (_db.select(_db.users)
-          ..where(
-            (u) =>
-                u.id.equals(id) &
-                (u.userType.equals(UserType.vendeur) |
-                    u.phone.equals(depotPhone)),
-          ))
+          ..where((u) => u.id.equals(id) & u.userType.equals(UserType.vendeur)))
         .getSingleOrNull();
   }
 
@@ -66,10 +47,6 @@ class UserService {
   }) async {
     final phoneTrim = _requirePhone(phone);
     final nameTrim = _requireName(fullName);
-
-    if (DbSeeder.isDepotPrincipalAdminPhone(phoneTrim)) {
-      throw StateError('Ce numéro est réservé au dépôt principal.');
-    }
 
     final exists = await (_db.select(_db.users)
           ..where((u) => u.phone.equals(phoneTrim)))
@@ -105,15 +82,8 @@ class UserService {
 
     final user = await (_db.select(_db.users)..where((u) => u.id.equals(id)))
         .getSingleOrNull();
-    if (user == null) throw StateError('Vendeur introuvable.');
-    if (DbSeeder.isDepotPrincipalAdmin(user)) {
-      throw StateError('Le dépôt principal ne peut pas être modifié.');
-    }
-    if (user.userType != UserType.vendeur) {
+    if (user == null || user.userType != UserType.vendeur) {
       throw StateError('Vendeur introuvable.');
-    }
-    if (DbSeeder.isDepotPrincipalAdminPhone(phoneTrim)) {
-      throw StateError('Ce numéro est réservé au dépôt principal.');
     }
 
     final duplicate = await (_db.select(_db.users)
@@ -154,11 +124,7 @@ class UserService {
   Future<void> deleteVendeur(int id) async {
     final user = await (_db.select(_db.users)..where((u) => u.id.equals(id)))
         .getSingleOrNull();
-    if (user == null) throw StateError('Vendeur introuvable.');
-    if (DbSeeder.isDepotPrincipalAdmin(user)) {
-      throw StateError('Le dépôt principal ne peut pas être supprimé.');
-    }
-    if (user.userType != UserType.vendeur) {
+    if (user == null || user.userType != UserType.vendeur) {
       throw StateError('Vendeur introuvable.');
     }
 

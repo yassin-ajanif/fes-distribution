@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:fes_distribution/db/app_database.dart';
-import 'package:fes_distribution/db/db_seeder.dart';
 import 'package:fes_distribution/ui/common/confirm_dialog.dart';
 import 'package:fes_distribution/ui/common/loading_view.dart';
 import 'package:fes_distribution/ui/common/shell_app_bar.dart';
@@ -109,15 +108,11 @@ class _VendeursPageState extends ConsumerState<VendeursPage> {
                           separatorBuilder: (_, __) => const SizedBox(height: 8),
                           itemBuilder: (context, index) {
                             final v = _vendeurs[index];
-                            final isDepot = DbSeeder.isDepotPrincipalAdmin(v);
                             return Card(
                               child: ListTile(
-                                leading: CircleAvatar(
+                                leading: const CircleAvatar(
                                   backgroundColor: AppColors.brandSoft,
-                                  child: Icon(
-                                    isDepot ? Icons.warehouse : Icons.person,
-                                    color: AppColors.brand,
-                                  ),
+                                  child: Icon(Icons.person, color: AppColors.brand),
                                 ),
                                 title: Text(v.fullName),
                                 subtitle: Text(v.phone),

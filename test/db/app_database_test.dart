@@ -1,4 +1,4 @@
-import 'package:drift/drift.dart';
+import 'package:drift/drift.dart' hide isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -38,10 +38,25 @@ void main() {
         .getSingle();
     expect(client.type, 0);
 
-    final admin = await (db.select(db.users)
-          ..where((t) => t.phone.equals(DbSeeder.depotPrincipalAdminPhone)))
-        .getSingle();
-    expect(admin.userType, 'Admin');
+    expect(await db.select(db.users).get(), isEmpty);
+  });
+
+  test('existing databases drop the legacy DEPOT-PRINCIPAL pseudo-vendeur', () async {
+    await db.into(db.users).insert(
+          UsersCompanion.insert(
+            fullName: 'admin',
+            phone: 'DEPOT-PRINCIPAL',
+            userType: const Value('Admin'),
+            createdAt: DateTime.now().toUtc(),
+          ),
+        );
+
+    await DbSeeder.removeLegacyDepotAdmin(db);
+
+    final legacy = await (db.select(db.users)
+          ..where((t) => t.phone.equals('DEPOT-PRINCIPAL')))
+        .getSingleOrNull();
+    expect(legacy, isNull);
   });
 
   test('supports inserting a product with category', () async {
