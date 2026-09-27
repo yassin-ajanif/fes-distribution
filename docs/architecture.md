@@ -135,6 +135,7 @@ lib/
 │   │   │       └── bon_decharge_service.dart
 │   │   ├── ventes/                    # sidebar: Ventes
 │   │   │   ├── bons_livraison/bon_livraison_service.dart
+│   │   │   ├── clients/tiers_service.dart     # clients picked on BL (quick-create from the BL form)
 │   │   │   ├── factures/facture_service.dart
 │   │   │   └── avoirs/avoir_service.dart
 │   │   ├── achats/                    # sidebar: Achats

@@ -9,6 +9,8 @@ import 'package:fes_distribution/business/services/stock/stock/stock_location_se
 import 'package:fes_distribution/business/services/stock/stock/stock_movement_service.dart';
 import 'package:fes_distribution/business/services/distribution/vendeurs/user_service.dart';
 import 'package:fes_distribution/business/services/distribution/vendeurs/vendeur_stock_service.dart';
+import 'package:fes_distribution/business/services/ventes/bons_livraison/bon_livraison_service.dart';
+import 'package:fes_distribution/business/services/ventes/clients/tiers_service.dart';
 import 'package:fes_distribution/db/app_database.dart';
 
 final databaseProvider = Provider<AppDatabase>((ref) {
@@ -59,6 +61,19 @@ final vendeurStockServiceProvider = Provider(
 
 final bonChargeServiceProvider = Provider(
   (ref) => BonChargeService(
+    ref.watch(databaseProvider),
+    ref.watch(documentNumberServiceProvider),
+    ref.watch(stockLocationServiceProvider),
+    ref.watch(stockMovementServiceProvider),
+  ),
+);
+
+final tiersServiceProvider = Provider(
+  (ref) => TiersService(ref.watch(databaseProvider)),
+);
+
+final bonLivraisonServiceProvider = Provider(
+  (ref) => BonLivraisonService(
     ref.watch(databaseProvider),
     ref.watch(documentNumberServiceProvider),
     ref.watch(stockLocationServiceProvider),

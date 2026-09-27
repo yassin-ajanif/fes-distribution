@@ -10,6 +10,7 @@ import 'package:fes_distribution/ui/avoir_fournisseur/avoir_fournisseur_list_pag
 import 'package:fes_distribution/ui/facturation/avoir_list_page.dart';
 import 'package:fes_distribution/ui/facturation/facture_list_page.dart';
 import 'package:fes_distribution/ui/facture_fournisseur/facture_fournisseur_list_page.dart';
+import 'package:fes_distribution/ui/livraison/bl_edit_page.dart';
 import 'package:fes_distribution/ui/livraison/bl_list_page.dart';
 import 'package:fes_distribution/ui/reception/br_list_page.dart';
 import 'package:fes_distribution/ui/reporting/reports_page.dart';
@@ -100,6 +101,21 @@ GoRouter createRouter() {
             pageBuilder: (context, state) => const NoTransitionPage(
               child: BlListPage(),
             ),
+            routes: [
+              GoRoute(
+                path: 'new',
+                parentNavigatorKey: _rootNavigatorKey,
+                builder: (context, state) => const BlEditPage(),
+              ),
+              GoRoute(
+                path: ':id',
+                parentNavigatorKey: _rootNavigatorKey,
+                builder: (context, state) {
+                  final id = int.parse(state.pathParameters['id']!);
+                  return BlEditPage(blId: id);
+                },
+              ),
+            ],
           ),
           GoRoute(
             path: '/ventes/factures',

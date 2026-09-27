@@ -66,10 +66,62 @@ class AppStrings {
   // Placeholder modules — ventes
   String get searchBl =>
       _t('Rechercher numéro, client, vendeur…', 'بحث برقم، عميل، بائع…');
-  String get emptyBl => _t(
-        'Aucun bon de livraison.\nLe module ventes sera connecté prochainement.',
-        'لا يوجد أذن تسليم.\nسيتم ربط وحدة المبيعات قريباً.',
+  String get emptyBl =>
+      _t('Aucun bon de livraison.', 'لا يوجد أذن تسليم.');
+
+  // Ventes — bons de livraison
+  String get blNew => _t('Nouveau bon de livraison', 'أذن تسليم جديد');
+  String get blSaved =>
+      _t('Bon de livraison enregistré.', 'تم حفظ أذن التسليم.');
+  String get blFlow => _t(
+        'Véhicule du vendeur → client',
+        'سيارة البائع ← العميل',
       );
+  String get fieldClient => _t('Client', 'العميل');
+  String get newClient => _t('Nouveau client', 'عميل جديد');
+  String get fieldTelephone => _t('Téléphone', 'الهاتف');
+  String get fieldVille => _t('Ville', 'المدينة');
+  String get fieldDateEcheance => _t('Échéance', 'تاريخ الاستحقاق');
+  String get fieldRemiseGlobale => _t('Remise globale (%)', 'خصم إجمالي (%)');
+  String get errSelectClient => _t('Sélectionnez un client.', 'اختر عميلاً.');
+  String get errRemiseGlobale => _t(
+        'La remise globale doit être entre 0 et 100 %.',
+        'يجب أن يكون الخصم الإجمالي بين 0 و 100 %.',
+      );
+  String get noClient => _t(
+        'Aucun client. Ajoutez-en un avec le bouton +.',
+        'لا يوجد عميل. أضف عميلاً بالزر +.',
+      );
+  String get colTotalTtc => _t('Total TTC', 'المجموع مع الضريبة');
+  String get colStatut => _t('Statut', 'الحالة');
+  String get colReste => _t('Reste', 'الباقي');
+  String get statusPaye => _t('Payé', 'مدفوع');
+  String get statusNonPaye => _t('Non payé', 'غير مدفوع');
+  String montantPaye(String v) => _t('Payé : $v', 'المدفوع: $v');
+  String resteAPayer(String v) => _t('Reste à payer : $v', 'الباقي للدفع: $v');
+
+  // Paiements
+  String get paiements => _t('Paiements', 'الدفعات');
+  String get addPaiement => _t('Ajouter un paiement', 'إضافة دفعة');
+  String get noPaiement =>
+      _t('Aucun paiement enregistré.', 'لا توجد دفعات مسجلة.');
+  String get fieldMontant => _t('Montant', 'المبلغ');
+  String get fieldMode => _t('Mode', 'طريقة الدفع');
+  String get fieldReference2 => _t('Référence (chèque, virement…)', 'المرجع (شيك، تحويل…)');
+  String get errAmount => _t(
+        'Le montant doit être supérieur à 0.',
+        'يجب أن يكون المبلغ أكبر من 0.',
+      );
+  String errPaymentsExceed(String paid, String ttc) => _t(
+        'La somme des paiements ($paid) ne peut pas dépasser le total TTC ($ttc).',
+        'مجموع الدفعات ($paid) لا يمكن أن يتجاوز المجموع مع الضريبة ($ttc).',
+      );
+  String get modeCredit => _t('Crédit', 'آجل');
+  String get modeCheque => _t('Chèque', 'شيك');
+  String get modeEspeces => _t('Espèces', 'نقداً');
+  String get modeTpe => _t('TPE', 'بطاقة');
+  String get modeVirement => _t('Virement', 'تحويل');
+  String get modeEffet => _t('Effet', 'كمبيالة');
   String get searchFacture =>
       _t('Rechercher numéro, client…', 'بحث برقم، عميل…');
   String get emptyFacture => _t(

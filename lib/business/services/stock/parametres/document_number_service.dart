@@ -22,6 +22,14 @@ class DocumentNumberService {
         prefix: 'BDH',
       );
 
+  Future<String> nextBonLivraison() => _nextFromDb(
+        loadNumeros: () async {
+          final rows = await _db.select(_db.bonsLivraison).get();
+          return rows.map((r) => r.numero).toList();
+        },
+        prefix: 'BL',
+      );
+
   Future<String> _nextFromDb({
     required Future<List<String>> Function() loadNumeros,
     required String prefix,

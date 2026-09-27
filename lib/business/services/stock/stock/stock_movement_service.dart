@@ -13,6 +13,7 @@ class StockMovementService {
   final AppDatabase _db;
   final StockBalanceService _balance;
 
+  static const origineTypeBonLivraison = 'BL';
   static const origineTypeBonCharge = 'BCH';
   static const origineTypeBonDecharge = 'BDH';
   static const origineTypeInventaire = 'Inventaire';
@@ -141,6 +142,109 @@ class StockMovementService {
         lines: lines,
         createdByUserId: createdByUserId,
       );
+
+  /// A BL sale takes [lines] out of [vendeurLocationId] (the vendeur's car).
+  /// Movements this BL left on another location (vendeur changed) are
+  /// reversed first. Empty [lines] cancels the BL's whole stock impact.
+  Future<void> resyncBonLivraisonStock({
+    required int bonLivraisonId,
+    required String noteDetail,
+    required int vendeurLocationId,
+    required Iterable<({int produitId, double quantite})> lines,
+    int? createdByUserId,
+  }) async {
+    final desired = <int, double>{};
+    for (final line in lines) {
+      if (line.produitId <= 0 || line.quantite <= 0) continue;
+      desired[line.produitId] = (desired[line.produitId] ?? 0) - line.quantite;
+    }
+
+    final prior = await (_db.select(_db.mouvementsStock)
+          ..where(
+            (m) =>
+                m.origineType.equals(origineTypeBonLivraison) &
+                m.origineId.equals(bonLivraisonId),
+          ))
+        .get();
+    final otherLocationIds = {
+      for (final m in prior) ...[m.fromLocationId, m.toLocationId],
+    }.whereType<int>().where((id) => id != vendeurLocationId);
+
+    for (final oldLocationId in otherLocationIds) {
+      await _syncSingleLocationDocumentStock(
+        origineType: origineTypeBonLivraison,
+        origineId: bonLivraisonId,
+        noteDetail: noteDetail,
+        desiredSignedByProduit: const {},
+        locationId: oldLocationId,
+        createdByUserId: createdByUserId,
+      );
+    }
+    await _syncSingleLocationDocumentStock(
+      origineType: origineTypeBonLivraison,
+      origineId: bonLivraisonId,
+      noteDetail: noteDetail,
+      desiredSignedByProduit: desired,
+      locationId: vendeurLocationId,
+      createdByUserId: createdByUserId,
+    );
+  }
+
+  Future<void> _syncSingleLocationDocumentStock({
+    required String origineType,
+    required int origineId,
+    required String noteDetail,
+    required Map<int, double> desiredSignedByProduit,
+    required int locationId,
+    int? createdByUserId,
+  }) async {
+    final movements = await (_db.select(_db.mouvementsStock)
+          ..where(
+            (m) =>
+                m.origineType.equals(origineType) &
+                m.origineId.equals(origineId),
+          ))
+        .get();
+    final documentHasPriorMovements = movements.isNotEmpty;
+
+    final currentSignedByProduit = <int, double>{};
+    for (final m in movements) {
+      final impact = _signedImpactOnLocation(m, locationId);
+      if (impact == 0) continue;
+      currentSignedByProduit[m.produitId] =
+          (currentSignedByProduit[m.produitId] ?? 0) + impact;
+    }
+
+    final produitIds = {
+      ...currentSignedByProduit.keys,
+      ...desiredSignedByProduit.keys,
+    };
+    for (final produitId in produitIds) {
+      final current = currentSignedByProduit[produitId] ?? 0;
+      final desired = desiredSignedByProduit[produitId] ?? 0;
+      final delta = desired - current;
+      if (delta == 0) continue;
+
+      final isAnnulation = desired == 0 && current != 0;
+      final isModification = !isAnnulation && documentHasPriorMovements;
+      final note = isAnnulation
+          ? 'Annulation — $noteDetail'
+          : isModification
+              ? 'Modification — $noteDetail'
+              : noteDetail;
+
+      await _applyLocationMovement(
+        produitId: produitId,
+        fromId: delta < 0 ? locationId : null,
+        toId: delta > 0 ? locationId : null,
+        quantite: delta.abs(),
+        origineType: origineType,
+        origineId: origineId,
+        note: note,
+        createdByUserId: createdByUserId,
+      );
+    }
+  }
 
   Future<List<StockShortage>> getOutboundShortages({
     required int fromLocationId,
