@@ -62,8 +62,6 @@ class _PersonnelDocumentEditPageState
 
   bool get _isCharge => widget.kind == PersonnelDocKind.charge;
   bool get _isNew => widget.bonId == null;
-  String get _routeBase =>
-      _isCharge ? '/distribution/bons-charge' : '/distribution/bons-decharge';
   String get _origineType => _isCharge
       ? StockMovementService.origineTypeBonCharge
       : StockMovementService.origineTypeBonDecharge;
@@ -326,11 +324,7 @@ class _PersonnelDocumentEditPageState
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(_isCharge ? s.bonChargeSaved : s.bonDechargeSaved)),
       );
-      if (_isNew) {
-        context.go('$_routeBase/$id');
-      } else {
-        await _load();
-      }
+      context.pop(id);
     } catch (e) {
       if (mounted) await showErrorDialog(context, title: title, message: '$e');
     } finally {
@@ -421,6 +415,17 @@ class _PersonnelDocumentEditPageState
                 ),
                 const SizedBox(height: 16),
                 _buildTotals(context),
+                const SizedBox(height: 16),
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: TextField(
+                      controller: _noteController,
+                      decoration: InputDecoration(labelText: s.note),
+                      maxLines: 3,
+                    ),
+                  ),
+                ),
               ],
             ),
     );
@@ -487,12 +492,6 @@ class _PersonnelDocumentEditPageState
               onPressed: _pickDate,
               icon: const Icon(Icons.calendar_today, size: 18),
               label: Text('${s.fieldDate} : ${dateFormat.format(_date)}'),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _noteController,
-              decoration: InputDecoration(labelText: s.note),
-              maxLines: 2,
             ),
           ],
         ),

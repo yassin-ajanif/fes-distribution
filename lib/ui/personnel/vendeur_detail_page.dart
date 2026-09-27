@@ -108,13 +108,11 @@ class _VendeurDetailPageState extends ConsumerState<VendeurDetailPage> {
     try {
       final service = ref.read(userServiceProvider);
       if (widget.isNew) {
-        final user = await service.createVendeur(
+        await service.createVendeur(
           fullName: _nomController.text,
           phone: _phoneController.text,
           actif: _actif,
         );
-        if (!mounted) return;
-        context.go('/distribution/vendeurs/${user.id}');
       } else {
         await service.updateVendeur(
           id: _user!.id,
@@ -122,13 +120,12 @@ class _VendeurDetailPageState extends ConsumerState<VendeurDetailPage> {
           phone: _phoneController.text,
           actif: _actif,
         );
-        await _load();
       }
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Vendeur enregistré.')),
-        );
-      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Vendeur enregistré.')),
+      );
+      context.pop(true);
     } catch (e) {
       if (mounted) {
         await showErrorDialog(context, title: 'Vendeurs', message: '$e');

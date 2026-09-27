@@ -52,6 +52,11 @@ class _VendeursPageState extends ConsumerState<VendeursPage> {
     }
   }
 
+  Future<void> _open(String path) async {
+    await context.push(path);
+    if (mounted) await _load();
+  }
+
   @override
   Widget build(BuildContext context) {
     final s = context.s;
@@ -66,7 +71,7 @@ class _VendeursPageState extends ConsumerState<VendeursPage> {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.push('/distribution/vendeurs/new'),
+        onPressed: () => _open('/distribution/vendeurs/new'),
         icon: const Icon(Icons.person_add),
         label: Text(s.actionNew),
       ),
@@ -120,7 +125,7 @@ class _VendeursPageState extends ConsumerState<VendeursPage> {
                                     ? const Icon(Icons.chevron_right)
                                     : const Icon(Icons.block, color: AppColors.muted),
                                 onTap: () =>
-                                    context.push('/distribution/vendeurs/${v.id}'),
+                                    _open('/distribution/vendeurs/${v.id}'),
                               ),
                             );
                           },
