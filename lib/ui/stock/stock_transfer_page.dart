@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:fes_distribution/ui/common/app_bar_save_button.dart';
 import 'package:fes_distribution/db/app_database.dart';
 import 'package:fes_distribution/ui/common/confirm_dialog.dart';
 import 'package:fes_distribution/ui/common/formatters.dart';
@@ -156,18 +157,9 @@ class _StockTransferPageState extends ConsumerState<StockTransferPage> {
         ),
         title: Text(s.transferTitle),
         actions: [
-          TextButton(
-            onPressed: _saving || _loading ? null : _save,
-            child: _saving
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
-                  )
-                : Text(s.actionSave, style: const TextStyle(color: Colors.white)),
+          AppBarSaveButton(
+            onPressed: _loading ? null : _save,
+            saving: _saving,
           ),
         ],
       ),

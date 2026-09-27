@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:fes_distribution/ui/common/app_bar_save_button.dart';
 import 'package:fes_distribution/business/models/vendeur_stock_line.dart';
 import 'package:fes_distribution/db/app_database.dart';
 import 'package:fes_distribution/db/db_seeder.dart';
@@ -182,15 +183,9 @@ class _VendeurDetailPageState extends ConsumerState<VendeurDetailPage> {
               icon: const Icon(Icons.delete_outline),
               onPressed: _saving ? null : _delete,
             ),
-          TextButton(
-            onPressed: _ficheEditable && !_saving ? _save : null,
-            child: _saving
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                  )
-                : const Text('Enregistrer'),
+          AppBarSaveButton(
+            onPressed: _ficheEditable ? _save : null,
+            saving: _saving,
           ),
         ],
       ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:fes_distribution/ui/common/app_bar_save_button.dart';
 import 'package:fes_distribution/business/helpers/document_totals.dart';
 import 'package:fes_distribution/business/models/personnel_document_line.dart';
 import 'package:fes_distribution/business/services/stock/stock/stock_movement_service.dart';
@@ -309,16 +310,7 @@ class _BonChargeEditPageState extends ConsumerState<BonChargeEditPage> {
               icon: const Icon(Icons.delete_outline),
               onPressed: _saving ? null : _delete,
             ),
-          TextButton(
-            onPressed: _saving ? null : _save,
-            child: _saving
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                  )
-                : const Text('Enregistrer'),
-          ),
+          AppBarSaveButton(onPressed: _save, saving: _saving),
         ],
       ),
       body: _loading
