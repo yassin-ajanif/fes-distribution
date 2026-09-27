@@ -155,9 +155,28 @@ class AppStrings {
   String get actionInvoice => _t('Facturer', 'فوترة');
   String get searchAvoir =>
       _t('Rechercher numéro, client…', 'بحث برقم، عميل…');
-  String get emptyAvoir => _t(
-        'Aucun avoir.\nLe module ventes sera connecté prochainement.',
-        'لا يوجد إشعار دائن.\nسيتم ربط وحدة المبيعات قريباً.',
+  String get emptyAvoir => _t('Aucun avoir.', 'لا يوجد إشعار دائن.');
+  String get avoirNew => _t('Nouvel avoir', 'إشعار دائن جديد');
+  String get avoirSaved => _t('Avoir enregistré.', 'تم حفظ الإشعار الدائن.');
+  String get createAvoir => _t('Créer un avoir', 'إنشاء إشعار دائن');
+  String get fieldFactureOptional =>
+      _t('Facture (optionnelle)', 'الفاتورة (اختيارية)');
+  String get noFactureLinked => _t('Aucune facture', 'بدون فاتورة');
+  String resteSurFacture(String amount) => _t(
+        'Reste créditable sur la facture : $amount',
+        'المتبقي القابل للإشعار على الفاتورة: $amount',
+      );
+  String get clientLockedByFacture => _t(
+        'Retirez la facture pour changer de client.',
+        'احذف الفاتورة لتغيير العميل.',
+      );
+  String get retourVendeurHint => _t(
+        'Les quantités retournent dans le stock (voiture) du vendeur.',
+        'تعود الكميات إلى مخزون (سيارة) البائع.',
+      );
+  String get replaceLinesWithFacture => _t(
+        'Remplacer les lignes par celles de la facture ?',
+        'استبدال السطور بسطور الفاتورة؟',
       );
 
   // Achats — common

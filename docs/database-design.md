@@ -293,6 +293,8 @@ Lines use `QuantiteCommandee`.
 | `Numero`, `ClientId` (FK), `FactureId` (FK, SET NULL), `Date`, `Motif`, `RetourMarchandise` | |
 | + BaseEntity | |
 
+With `RetourMarchandise` the goods go back into a vendeur's car (virtual location). The vendeur has no column: it is chosen in the form (defaulting to the vendeur of the facture's first BL) and read back from the avoir's stock movements (`OrigineType = 'Avoir'`). The sum of avoir TTCs on one facture must not exceed the facture TTC; a facture referenced by an avoir cannot be deleted.
+
 ---
 
 ### Purchase documents

@@ -15,6 +15,7 @@ class StockMovementService {
 
   static const origineTypeBonLivraison = 'BL';
   static const origineTypeBonReception = 'BR';
+  static const origineTypeAvoir = 'Avoir';
   static const origineTypeAvoirFournisseur = 'AvoirFournisseur';
   static const origineTypeBonCharge = 'BCH';
   static const origineTypeBonDecharge = 'BDH';
@@ -233,6 +234,65 @@ class StockMovementService {
             retourMarchandise ? _sumByProduit(lines, sign: -1) : const {},
         createdByUserId: createdByUserId,
       );
+
+  /// A client avoir with goods returned puts [lines] back into
+  /// [vendeurLocationId] (the vendeur's car — sales never touch a depot).
+  /// Without [retourMarchandise] — or with a null location / empty [lines] —
+  /// every movement the avoir made is cancelled.
+  Future<void> resyncAvoirStock({
+    required int avoirId,
+    required String noteDetail,
+    required int? vendeurLocationId,
+    required bool retourMarchandise,
+    required Iterable<({int produitId, double quantite})> lines,
+    int? createdByUserId,
+  }) async {
+    if (retourMarchandise && vendeurLocationId != null) {
+      await _resyncDocumentAtLocation(
+        origineType: origineTypeAvoir,
+        origineId: avoirId,
+        noteDetail: noteDetail,
+        locationId: vendeurLocationId,
+        desiredSignedByProduit: _sumByProduit(lines, sign: 1),
+        createdByUserId: createdByUserId,
+      );
+      return;
+    }
+    for (final locationId in await documentLocationIds(origineTypeAvoir, avoirId)) {
+      await _syncSingleLocationDocumentStock(
+        origineType: origineTypeAvoir,
+        origineId: avoirId,
+        noteDetail: noteDetail,
+        desiredSignedByProduit: const {},
+        locationId: locationId,
+        createdByUserId: createdByUserId,
+      );
+    }
+  }
+
+  /// Locations where a document's stock movements still have a non-zero net
+  /// effect on at least one product.
+  Future<Set<int>> documentLocationIds(String origineType, int origineId) async {
+    final prior = await (_db.select(_db.mouvementsStock)
+          ..where(
+            (m) =>
+                m.origineType.equals(origineType) &
+                m.origineId.equals(origineId),
+          ))
+        .get();
+    final net = <(int, int), double>{};
+    for (final m in prior) {
+      for (final locationId in [m.fromLocationId, m.toLocationId]) {
+        if (locationId == null) continue;
+        final key = (locationId, m.produitId);
+        net[key] = (net[key] ?? 0) + _signedImpactOnLocation(m, locationId);
+      }
+    }
+    return {
+      for (final e in net.entries)
+        if (e.value.abs() > 1e-9) e.key.$1,
+    };
+  }
 
   static Map<int, double> _sumByProduit(
     Iterable<({int produitId, double quantite})> lines, {

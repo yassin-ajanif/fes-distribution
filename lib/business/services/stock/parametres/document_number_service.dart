@@ -38,6 +38,14 @@ class DocumentNumberService {
         prefix: 'FAC',
       );
 
+  Future<String> nextAvoir() => _nextFromDb(
+        loadNumeros: () async {
+          final rows = await _db.select(_db.avoirs).get();
+          return rows.map((r) => r.numero).toList();
+        },
+        prefix: 'AVO',
+      );
+
   Future<String> nextBonReception() => _nextFromDb(
         loadNumeros: () async {
           final rows = await _db.select(_db.bonsReception).get();

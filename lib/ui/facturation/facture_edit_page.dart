@@ -261,6 +261,13 @@ class _FactureEditPageState extends ConsumerState<FactureEditPage> {
     }
   }
 
+  Future<void> _createAvoir() async {
+    final id = await context.push<int>(
+      '/ventes/avoirs/new?facture=${widget.factureId}',
+    );
+    if (id != null && mounted) context.go('/ventes/avoirs');
+  }
+
   Future<DateTime?> _pick(DateTime initial) => showDatePicker(
         context: context,
         initialDate: initial,
@@ -280,6 +287,12 @@ class _FactureEditPageState extends ConsumerState<FactureEditPage> {
         ),
         title: Text(_isNew ? s.factureNew : _numero),
         actions: [
+          if (!_isNew)
+            IconButton(
+              tooltip: s.createAvoir,
+              icon: const Icon(Icons.undo_outlined),
+              onPressed: _saving ? null : _createAvoir,
+            ),
           if (!_isNew)
             IconButton(
               tooltip: s.actionDelete,

@@ -297,8 +297,8 @@ Modules: devis, commande_client, livraison
 
 Modules: facturation
 
-- [ ] Tables: `Factures`, `Avoirs` + line tables
-- [ ] Services: `facture_service`, `avoir_service`
+- [x] Tables: `Factures`, `Avoirs` + line tables
+- [x] Services: `facture_service`, `avoir_service`
 - [ ] Reference Peinture: `Modules/Facturation`
 
 ### Phase 4 — Purchases

@@ -8,6 +8,7 @@ import 'package:fes_distribution/ui/personnel/bon_decharge_list_page.dart';
 import 'package:fes_distribution/ui/personnel/vendeur_detail_page.dart';
 import 'package:fes_distribution/ui/avoir_fournisseur/avoir_fournisseur_edit_page.dart';
 import 'package:fes_distribution/ui/avoir_fournisseur/avoir_fournisseur_list_page.dart';
+import 'package:fes_distribution/ui/facturation/avoir_edit_page.dart';
 import 'package:fes_distribution/ui/facturation/avoir_list_page.dart';
 import 'package:fes_distribution/ui/facturation/facture_edit_page.dart';
 import 'package:fes_distribution/ui/facturation/facture_list_page.dart';
@@ -152,6 +153,26 @@ GoRouter createRouter() {
             pageBuilder: (context, state) => const NoTransitionPage(
               child: AvoirListPage(),
             ),
+            routes: [
+              GoRoute(
+                path: 'new',
+                parentNavigatorKey: _rootNavigatorKey,
+                builder: (context, state) {
+                  final facture = state.uri.queryParameters['facture'];
+                  return AvoirEditPage(
+                    fromFactureId: facture == null ? null : int.tryParse(facture),
+                  );
+                },
+              ),
+              GoRoute(
+                path: ':id',
+                parentNavigatorKey: _rootNavigatorKey,
+                builder: (context, state) {
+                  final id = int.parse(state.pathParameters['id']!);
+                  return AvoirEditPage(avoirId: id);
+                },
+              ),
+            ],
           ),
           GoRoute(
             path: '/achats/bons-reception',
