@@ -1,142 +1,171 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:fes_distribution/business/models/personnel_document_line.dart';
 import 'package:fes_distribution/ui/common/formatters.dart';
 import 'package:fes_distribution/ui/common/responsive.dart';
+import 'package:fes_distribution/ui/l10n/strings_scope.dart';
 import 'package:fes_distribution/ui/theme/app_theme.dart';
 
+double parseQty(String text) =>
+    double.tryParse(text.replaceAll(RegExp(r'\s'), '').replaceAll(',', '.')) ?? 0;
+
+/// Editable lines of a bon de charge / décharge.
+/// [available] = stock at the source location per product (shown as "Dispo").
 class DocumentLinesTable extends StatelessWidget {
   const DocumentLinesTable({
     super.key,
     required this.lines,
-    required this.selectedIndex,
-    required this.onSelect,
     required this.onChanged,
     required this.onRemoveAt,
+    this.available = const {},
   });
 
   final List<PersonnelDocumentLine> lines;
-  final int? selectedIndex;
-  final ValueChanged<int?> onSelect;
-  final void Function(int index) onRemoveAt;
   final void Function(int index, PersonnelDocumentLine line) onChanged;
+  final void Function(int index) onRemoveAt;
+  final Map<int, double> available;
 
   @override
   Widget build(BuildContext context) {
+    final s = context.s;
     if (lines.isEmpty) {
       return Card(
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Center(
             child: Text(
-              'Aucune ligne — ajoutez un produit ci-dessus.',
+              s.noLines,
+              textAlign: TextAlign.center,
               style: TextStyle(color: AppColors.muted),
             ),
           ),
         ),
       );
     }
+    return isMobile(context) ? _buildMobile(context) : _buildDesktop(context);
+  }
 
-    if (isMobile(context)) {
-      return Column(
-        children: [
-          for (var i = 0; i < lines.length; i++)
-            Card(
-              margin: const EdgeInsets.only(bottom: 8),
-              color: selectedIndex == i ? AppColors.brandSoft : null,
-              child: InkWell(
-                onTap: () => onSelect(selectedIndex == i ? null : i),
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+  bool _isShort(PersonnelDocumentLine l) =>
+      l.quantite > (available[l.produitId] ?? 0);
+
+  Widget _dispoText(PersonnelDocumentLine l, {String Function(String)? label}) {
+    final qty = formatQty(available[l.produitId] ?? 0);
+    return Text(
+      label == null ? qty : label(qty),
+      style: TextStyle(
+        color: _isShort(l) ? AppColors.danger : AppColors.muted,
+        fontWeight: _isShort(l) ? FontWeight.w600 : null,
+      ),
+    );
+  }
+
+  Widget _buildMobile(BuildContext context) {
+    final s = context.s;
+    return Column(
+      children: [
+        for (var i = 0; i < lines.length; i++)
+          Card(
+            key: ValueKey('line-${lines[i].produitId}'),
+            margin: const EdgeInsets.only(bottom: 8),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(12, 4, 4, 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
                     children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              lines[i].reference,
-                              style: const TextStyle(fontWeight: FontWeight.w600),
-                            ),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.delete_outline, size: 20),
-                            onPressed: () => onRemoveAt(i),
-                          ),
-                        ],
-                      ),
-                      TextFormField(
-                        key: ValueKey('des-${lines[i].produitId}-${lines[i].designation}'),
-                        initialValue: lines[i].designation,
-                        decoration: const InputDecoration(
-                          labelText: 'Désignation',
-                          isDense: true,
+                      Expanded(
+                        child: Text(
+                          lines[i].reference,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontWeight: FontWeight.w600),
                         ),
-                        onChanged: (v) =>
-                            onChanged(i, lines[i].copyWith(designation: v)),
                       ),
-                      const SizedBox(height: 8),
-                      TextFormField(
-                        key: ValueKey('qty-${lines[i].produitId}-${lines[i].quantite}'),
-                        initialValue: formatQty(lines[i].quantite),
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                        decoration: const InputDecoration(
-                          labelText: 'Quantité',
-                          isDense: true,
-                        ),
-                        onChanged: (v) {
-                          final q = double.tryParse(v.replaceAll(',', '.')) ?? 0;
-                          onChanged(i, lines[i].copyWith(quantite: q));
-                        },
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text('PU HT: ${formatMoney(lines[i].prixUnitaireHt)}'),
-                          Text(
-                            'TTC: ${formatMoney(lines[i].montantTtc)}',
-                            style: const TextStyle(fontWeight: FontWeight.w600),
-                          ),
-                        ],
+                      Flexible(child: _dispoText(lines[i], label: s.available)),
+                      IconButton(
+                        icon: const Icon(Icons.delete_outline, size: 20),
+                        onPressed: () => onRemoveAt(i),
                       ),
                     ],
                   ),
-                ),
+                  Padding(
+                    padding: const EdgeInsetsDirectional.only(end: 8),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _TextCell(
+                          value: lines[i].designation,
+                          decoration: InputDecoration(
+                            labelText: s.fieldDesignation,
+                            isDense: true,
+                          ),
+                          onChanged: (v) =>
+                              onChanged(i, lines[i].copyWith(designation: v)),
+                        ),
+                        const SizedBox(height: 8),
+                        _QtyCell(
+                          value: lines[i].quantite,
+                          decoration: InputDecoration(
+                            labelText: s.quantity,
+                            isDense: true,
+                          ),
+                          onChanged: (q) =>
+                              onChanged(i, lines[i].copyWith(quantite: q)),
+                        ),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          alignment: WrapAlignment.spaceBetween,
+                          spacing: 12,
+                          children: [
+                            Text('${s.colPuHt}: ${formatMoney(lines[i].prixUnitaireHt)}'),
+                            Text(
+                              'TTC: ${formatMoney(lines[i].montantTtc)}',
+                              style: const TextStyle(fontWeight: FontWeight.w600),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
-        ],
-      );
-    }
+          ),
+      ],
+    );
+  }
 
+  Widget _buildDesktop(BuildContext context) {
+    final s = context.s;
     return Card(
       clipBehavior: Clip.antiAlias,
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: DataTable(
-          showCheckboxColumn: false,
           headingRowColor: WidgetStateProperty.all(AppColors.brandSoft),
-          columns: const [
-            DataColumn(label: Text('Réf.')),
-            DataColumn(label: Text('Désignation')),
-            DataColumn(label: Text('Qté'), numeric: true),
-            DataColumn(label: Text('PU HT'), numeric: true),
-            DataColumn(label: Text('Rem.%'), numeric: true),
-            DataColumn(label: Text('TVA%'), numeric: true),
-            DataColumn(label: Text('Montant HT'), numeric: true),
-            DataColumn(label: Text('Montant TTC'), numeric: true),
+          columns: [
+            DataColumn(label: Text(s.colRef)),
+            DataColumn(label: Text(s.fieldDesignation)),
+            DataColumn(label: Text(s.colQty), numeric: true),
+            DataColumn(label: Text(s.colDispo), numeric: true),
+            DataColumn(label: Text(s.colPuHt), numeric: true),
+            DataColumn(label: Text(s.colRemise), numeric: true),
+            DataColumn(label: Text(s.colTva), numeric: true),
+            DataColumn(label: Text(s.colMontantHt), numeric: true),
+            DataColumn(label: Text(s.colMontantTtc), numeric: true),
+            const DataColumn(label: SizedBox.shrink()),
           ],
           rows: [
             for (var i = 0; i < lines.length; i++)
               DataRow(
-                selected: selectedIndex == i,
-                onSelectChanged: (_) => onSelect(i),
                 cells: [
                   DataCell(Text(lines[i].reference)),
                   DataCell(
                     SizedBox(
-                      width: 180,
-                      child: TextFormField(
-                        initialValue: lines[i].designation,
+                      width: 200,
+                      child: _TextCell(
+                        key: ValueKey('des-${lines[i].produitId}'),
+                        value: lines[i].designation,
                         decoration: const InputDecoration(
                           isDense: true,
                           border: InputBorder.none,
@@ -149,24 +178,27 @@ class DocumentLinesTable extends StatelessWidget {
                   DataCell(
                     SizedBox(
                       width: 80,
-                      child: TextFormField(
-                        initialValue: formatQty(lines[i].quantite),
-                        keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true,
-                        ),
+                      child: _QtyCell(
+                        key: ValueKey('qty-${lines[i].produitId}'),
+                        value: lines[i].quantite,
                         decoration: const InputDecoration(isDense: true),
-                        onChanged: (v) {
-                          final q = double.tryParse(v.replaceAll(',', '.')) ?? 0;
-                          onChanged(i, lines[i].copyWith(quantite: q));
-                        },
+                        onChanged: (q) =>
+                            onChanged(i, lines[i].copyWith(quantite: q)),
                       ),
                     ),
                   ),
+                  DataCell(_dispoText(lines[i])),
                   DataCell(Text(formatMoney(lines[i].prixUnitaireHt))),
                   DataCell(Text(formatQty(lines[i].remise))),
                   DataCell(Text(formatQty(lines[i].tauxTva))),
                   DataCell(Text(formatMoney(lines[i].montantHt))),
                   DataCell(Text(formatMoney(lines[i].montantTtc))),
+                  DataCell(
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline, size: 20),
+                      onPressed: () => onRemoveAt(i),
+                    ),
+                  ),
                 ],
               ),
           ],
@@ -174,5 +206,98 @@ class DocumentLinesTable extends StatelessWidget {
       ),
     );
   }
+}
 
+/// Text field that owns its controller so typing never loses focus, and only
+/// takes the external [value] when it differs from what the user typed.
+class _TextCell extends StatefulWidget {
+  const _TextCell({
+    super.key,
+    required this.value,
+    required this.onChanged,
+    required this.decoration,
+  });
+
+  final String value;
+  final ValueChanged<String> onChanged;
+  final InputDecoration decoration;
+
+  @override
+  State<_TextCell> createState() => _TextCellState();
+}
+
+class _TextCellState extends State<_TextCell> {
+  late final TextEditingController _controller =
+      TextEditingController(text: widget.value);
+
+  @override
+  void didUpdateWidget(covariant _TextCell oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.value != _controller.text) _controller.text = widget.value;
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: _controller,
+      decoration: widget.decoration,
+      onChanged: widget.onChanged,
+    );
+  }
+}
+
+class _QtyCell extends StatefulWidget {
+  const _QtyCell({
+    super.key,
+    required this.value,
+    required this.onChanged,
+    required this.decoration,
+  });
+
+  final double value;
+  final ValueChanged<double> onChanged;
+  final InputDecoration decoration;
+
+  @override
+  State<_QtyCell> createState() => _QtyCellState();
+}
+
+class _QtyCellState extends State<_QtyCell> {
+  late final TextEditingController _controller =
+      TextEditingController(text: _format(widget.value));
+
+  static String _format(double v) =>
+      v == v.roundToDouble() ? v.toStringAsFixed(0) : v.toString();
+
+  @override
+  void didUpdateWidget(covariant _QtyCell oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (parseQty(_controller.text) != widget.value) {
+      _controller.text = _format(widget.value);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: _controller,
+      textAlign: TextAlign.end,
+      decoration: widget.decoration,
+      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]'))],
+      onChanged: (v) => widget.onChanged(parseQty(v)),
+    );
+  }
 }

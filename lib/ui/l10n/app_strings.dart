@@ -211,6 +211,64 @@ class AppStrings {
         'Supprimer $numero ?',
         'حذف $numero ؟',
       );
+  String get bonChargeNew => _t('Nouveau bon de charge', 'أذن شحن جديد');
+  String get bonDechargeNew => _t('Nouveau bon de décharge', 'أذن تفريغ جديد');
+  String get bonChargeSaved =>
+      _t('Bon de charge enregistré.', 'تم حفظ أذن الشحن.');
+  String get bonDechargeSaved =>
+      _t('Bon de décharge enregistré.', 'تم حفظ أذن التفريغ.');
+  String get bonChargeFlow => _t(
+        'Dépôt → véhicule du vendeur',
+        'المستودع ← سيارة البائع',
+      );
+  String get bonDechargeFlow => _t(
+        'Véhicule du vendeur → dépôt',
+        'سيارة البائع ← المستودع',
+      );
+  String get fieldVendeur => _t('Vendeur', 'البائع');
+  String get fieldDepot => _t('Dépôt', 'المستودع');
+  String get fieldDate => _t('Date', 'التاريخ');
+  String get colNumero => _t('Numéro', 'الرقم');
+  String get colRef => _t('Réf.', 'المرجع');
+  String get colQty => _t('Qté', 'الكمية');
+  String get colPuHt => _t('PU HT', 'س.و بدون ض');
+  String get colRemise => _t('Rem.%', 'خصم%');
+  String get colTva => _t('TVA%', 'ض.ق.م%');
+  String get colMontantHt => _t('Montant HT', 'المبلغ بدون ضريبة');
+  String get colMontantTtc => _t('Montant TTC', 'المبلغ مع الضريبة');
+  String get colDispo => _t('Dispo', 'المتوفر');
+  String totalHt(String v) => _t('Total HT : $v', 'المجموع بدون ضريبة: $v');
+  String totalTva(String v) => _t('Total TVA : $v', 'مجموع الضريبة: $v');
+  String totalTtc(String v) => _t('Total TTC : $v', 'المجموع مع الضريبة: $v');
+  String get actionOpen => _t('Ouvrir', 'فتح');
+  String get actionDelete => _t('Supprimer', 'حذف');
+  String get filterDate => _t('Filtrer par date', 'تصفية حسب التاريخ');
+  String get clearFilter => _t('Effacer le filtre', 'مسح التصفية');
+  String get errSelectVendeur =>
+      _t('Sélectionnez un vendeur.', 'اختر بائعاً.');
+  String get errSelectDepot => _t('Sélectionnez un dépôt.', 'اختر مستودعاً.');
+  String get errNoLines => _t(
+        'Ajoutez au moins une ligne avec quantité.',
+        'أضف سطراً واحداً على الأقل بكمية.',
+      );
+  String get errZeroTtc => _t(
+        'Le total TTC ne peut pas être nul.',
+        'لا يمكن أن يكون المجموع مع الضريبة صفراً.',
+      );
+  String get noActiveVendeur => _t(
+        'Aucun vendeur actif. Ajoutez un vendeur dans « Vendeurs ».',
+        'لا يوجد بائع نشط. أضف بائعاً من « البائعون ».',
+      );
+  String get unloadAll =>
+      _t('Décharger tout le véhicule', 'تفريغ كل السيارة');
+  String get unloadAllEmpty => _t(
+        'Le véhicule de ce vendeur est vide.',
+        'سيارة هذا البائع فارغة.',
+      );
+  String get unloadAllReplace => _t(
+        'Remplacer les lignes actuelles par tout le stock du véhicule ?',
+        'استبدال الأسطر الحالية بكل مخزون السيارة؟',
+      );
 
   // Stock shortage dialog
   String get stockShortageTitle =>
