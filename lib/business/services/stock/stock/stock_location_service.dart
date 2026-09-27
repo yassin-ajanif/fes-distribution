@@ -19,7 +19,9 @@ class StockLocationService {
     if (byName != null) return byName;
 
     final anyActive = await (_db.select(_db.stockLocations)
-          ..where((l) => l.isVirtual.equals(false) & l.actif.equals(true)))
+          ..where((l) => l.isVirtual.equals(false) & l.actif.equals(true))
+          ..orderBy([(l) => OrderingTerm.asc(l.id)])
+          ..limit(1))
         .getSingleOrNull();
     if (anyActive != null) return anyActive;
 

@@ -6,13 +6,16 @@ import 'package:fes_distribution/ui/personnel/bon_charge_list_page.dart';
 import 'package:fes_distribution/ui/personnel/bon_decharge_edit_page.dart';
 import 'package:fes_distribution/ui/personnel/bon_decharge_list_page.dart';
 import 'package:fes_distribution/ui/personnel/vendeur_detail_page.dart';
+import 'package:fes_distribution/ui/avoir_fournisseur/avoir_fournisseur_edit_page.dart';
 import 'package:fes_distribution/ui/avoir_fournisseur/avoir_fournisseur_list_page.dart';
 import 'package:fes_distribution/ui/facturation/avoir_list_page.dart';
 import 'package:fes_distribution/ui/facturation/facture_edit_page.dart';
 import 'package:fes_distribution/ui/facturation/facture_list_page.dart';
+import 'package:fes_distribution/ui/facture_fournisseur/facture_fournisseur_edit_page.dart';
 import 'package:fes_distribution/ui/facture_fournisseur/facture_fournisseur_list_page.dart';
 import 'package:fes_distribution/ui/livraison/bl_edit_page.dart';
 import 'package:fes_distribution/ui/livraison/bl_list_page.dart';
+import 'package:fes_distribution/ui/reception/br_edit_page.dart';
 import 'package:fes_distribution/ui/reception/br_list_page.dart';
 import 'package:fes_distribution/ui/reporting/reports_page.dart';
 import 'package:fes_distribution/ui/settings/settings_page.dart';
@@ -155,18 +158,68 @@ GoRouter createRouter() {
             pageBuilder: (context, state) => const NoTransitionPage(
               child: BrListPage(),
             ),
+            routes: [
+              GoRoute(
+                path: 'new',
+                parentNavigatorKey: _rootNavigatorKey,
+                builder: (context, state) => const BrEditPage(),
+              ),
+              GoRoute(
+                path: ':id',
+                parentNavigatorKey: _rootNavigatorKey,
+                builder: (context, state) {
+                  final id = int.parse(state.pathParameters['id']!);
+                  return BrEditPage(brId: id);
+                },
+              ),
+            ],
           ),
           GoRoute(
             path: '/achats/factures-fournisseur',
             pageBuilder: (context, state) => const NoTransitionPage(
               child: FactureFournisseurListPage(),
             ),
+            routes: [
+              GoRoute(
+                path: 'new',
+                parentNavigatorKey: _rootNavigatorKey,
+                builder: (context, state) {
+                  final br = state.uri.queryParameters['br'];
+                  return FactureFournisseurEditPage(
+                    fromBrId: br == null ? null : int.tryParse(br),
+                  );
+                },
+              ),
+              GoRoute(
+                path: ':id',
+                parentNavigatorKey: _rootNavigatorKey,
+                builder: (context, state) {
+                  final id = int.parse(state.pathParameters['id']!);
+                  return FactureFournisseurEditPage(factureId: id);
+                },
+              ),
+            ],
           ),
           GoRoute(
             path: '/achats/avoirs-fournisseur',
             pageBuilder: (context, state) => const NoTransitionPage(
               child: AvoirFournisseurListPage(),
             ),
+            routes: [
+              GoRoute(
+                path: 'new',
+                parentNavigatorKey: _rootNavigatorKey,
+                builder: (context, state) => const AvoirFournisseurEditPage(),
+              ),
+              GoRoute(
+                path: ':id',
+                parentNavigatorKey: _rootNavigatorKey,
+                builder: (context, state) {
+                  final id = int.parse(state.pathParameters['id']!);
+                  return AvoirFournisseurEditPage(avoirId: id);
+                },
+              ),
+            ],
           ),
           GoRoute(
             path: '/stock/produits',

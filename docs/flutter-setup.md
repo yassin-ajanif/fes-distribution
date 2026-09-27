@@ -306,7 +306,7 @@ Modules: facturation
 Modules: commande_fournisseur, reception, facture_fournisseur, avoir_fournisseur
 
 - [ ] Tables: supplier documents + payments
-- [ ] Services: `bon_reception_service`, `facture_fournisseur_service`, `avoir_fournisseur_service`
+- [x] Services: `bon_reception_service`, `facture_fournisseur_service`, `avoir_fournisseur_service`
 - [ ] Reference Peinture: `Modules/CommandeFournisseur`, `Modules/Reception`, `Modules/FactureFournisseur`, `Modules/AvoirFournisseur`
 
 ### Phase 5 — Personnel & charges

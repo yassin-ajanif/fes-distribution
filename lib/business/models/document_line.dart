@@ -1,5 +1,6 @@
-/// Editable product line shared by bon de charge / décharge, BL and facture.
-/// [bonLivraisonId] is set on facture lines copied from a BL.
+/// Editable product line shared by bon de charge / décharge, BL, facture and
+/// the achats documents. [bonLivraisonId] is set on facture lines copied from
+/// a BL, [bonReceptionId] on facture fournisseur lines copied from a BR.
 class DocumentLine {
   DocumentLine({
     this.produitId = 0,
@@ -10,6 +11,7 @@ class DocumentLine {
     this.remise = 0,
     this.tauxTva = 0,
     this.bonLivraisonId,
+    this.bonReceptionId,
   });
 
   int produitId;
@@ -20,9 +22,12 @@ class DocumentLine {
   double remise;
   double tauxTva;
   int? bonLivraisonId;
+  int? bonReceptionId;
 
-  /// Stable identity for widgets: the same product may appear once per BL.
-  String get key => '${bonLivraisonId ?? 0}-$produitId';
+  /// Stable identity for widgets: the same product may appear once per
+  /// source BL / BR.
+  String get key =>
+      '${bonLivraisonId ?? 0}-${bonReceptionId ?? 0}-$produitId';
 
   double get montantHt {
     final brut = quantite * prixUnitaireHt;
@@ -49,6 +54,7 @@ class DocumentLine {
       remise: remise ?? this.remise,
       tauxTva: tauxTva ?? this.tauxTva,
       bonLivraisonId: bonLivraisonId,
+      bonReceptionId: bonReceptionId,
     );
   }
 }

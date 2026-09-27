@@ -3,7 +3,7 @@ import 'package:fes_distribution/business/enums/mode_paiement.dart';
 import 'package:fes_distribution/business/enums/user_type.dart';
 import 'package:fes_distribution/business/helpers/document_totals.dart';
 import 'package:fes_distribution/business/models/bon_livraison_list_item.dart';
-import 'package:fes_distribution/business/models/bon_livraison_paiement.dart';
+import 'package:fes_distribution/business/models/document_paiement.dart';
 import 'package:fes_distribution/business/models/document_line.dart';
 import 'package:fes_distribution/business/services/stock/parametres/document_number_service.dart';
 import 'package:fes_distribution/business/services/stock/stock/stock_location_service.dart';
@@ -87,7 +87,7 @@ class BonLivraisonService {
       ({
         BonsLivraisonData bl,
         List<DocumentLine> lines,
-        List<BonLivraisonPaiement> paiements,
+        List<DocumentPaiement> paiements,
         String? factureNumero,
       })?> getById(int id) async {
     final bl = await (_db.select(_db.bonsLivraison)
@@ -136,7 +136,7 @@ class BonLivraisonService {
       ],
       paiements: [
         for (final p in paiementRows)
-          BonLivraisonPaiement(
+          DocumentPaiement(
             date: p.date,
             montant: p.montant,
             mode: ModePaiement.fromCode(p.mode),
@@ -158,7 +158,7 @@ class BonLivraisonService {
     double remiseGlobale = 0,
     String note = '',
     required List<DocumentLine> lines,
-    List<BonLivraisonPaiement> paiements = const [],
+    List<DocumentPaiement> paiements = const [],
     int? createdByUserId,
   }) async {
     if (clientId <= 0) throw StateError('Sélectionnez un client.');
@@ -359,7 +359,7 @@ class BonLivraisonService {
   }
 
   /// Credit payments do not count as paid (Peinture `SyncEstPayee`).
-  static bool _computeEstPayee(double ttc, List<BonLivraisonPaiement> paiements) {
+  static bool _computeEstPayee(double ttc, List<DocumentPaiement> paiements) {
     final paid = paiements
         .where((p) => p.mode != ModePaiement.credit)
         .fold<double>(0, (s, p) => s + p.montant);

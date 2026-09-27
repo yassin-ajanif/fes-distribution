@@ -160,24 +160,72 @@ class AppStrings {
         'لا يوجد إشعار دائن.\nسيتم ربط وحدة المبيعات قريباً.',
       );
 
-  // Placeholder modules — achats
+  // Achats — common
+  String get fieldFournisseur => _t('Fournisseur', 'المورد');
+  String get newFournisseur => _t('Nouveau fournisseur', 'مورد جديد');
+  String get errSelectFournisseur =>
+      _t('Sélectionnez un fournisseur.', 'اختر مورداً.');
+  String get noFournisseur => _t(
+        'Aucun fournisseur. Ajoutez-en un avec le bouton +.',
+        'لا يوجد مورد. أضف مورداً بالزر +.',
+      );
+  String get colFacture => _t('Facture', 'الفاتورة');
+
+  // Achats — bons de réception
   String get searchBr =>
       _t('Rechercher numéro, fournisseur…', 'بحث برقم، مورد…');
-  String get emptyBr => _t(
-        'Aucun bon réception.\nLe module achats sera connecté prochainement.',
-        'لا يوجد أذن استلام.\nسيتم ربط وحدة المشتريات قريباً.',
-      );
+  String get emptyBr => _t('Aucun bon de réception.', 'لا يوجد أذن استلام.');
+  String get brNew => _t('Nouveau bon de réception', 'أذن استلام جديد');
+  String get brSaved =>
+      _t('Bon de réception enregistré.', 'تم حفظ أذن الاستلام.');
+  String brFlow(String depot) =>
+      _t('Fournisseur → $depot', 'المورد ← $depot');
+
+  // Achats — factures fournisseur
   String get searchFactureFournisseur =>
       _t('Rechercher numéro, fournisseur…', 'بحث برقم، مورد…');
-  String get emptyFactureFournisseur => _t(
-        'Aucune facture fournisseur.\nLe module achats sera connecté prochainement.',
-        'لا توجد فاتورة مورد.\nسيتم ربط وحدة المشتريات قريباً.',
+  String get emptyFactureFournisseur =>
+      _t('Aucune facture fournisseur.', 'لا توجد فاتورة مورد.');
+  String get factureFournisseurNew =>
+      _t('Nouvelle facture fournisseur', 'فاتورة مورد جديدة');
+  String get factureFournisseurSaved =>
+      _t('Facture fournisseur enregistrée.', 'تم حفظ فاتورة المورد.');
+  String get linkedBrs =>
+      _t('Bons de réception facturés', 'أذون الاستلام المفوترة');
+  String get addBrs => _t('Ajouter des BR', 'إضافة أذون استلام');
+  String get noLinkedBr => _t(
+        'Aucun BR lié. Ajoutez des BR ou des produits du catalogue.',
+        'لا يوجد أذن استلام مرتبط. أضف أذون استلام أو منتجات.',
       );
+  String get noAvailableBrs => _t(
+        'Aucun BR non facturé pour ce fournisseur.',
+        'لا يوجد أذن استلام غير مفوتر لهذا المورد.',
+      );
+  String get fournisseurLockedByBr => _t(
+        'Retirez les BR liés pour changer de fournisseur.',
+        'احذف أذون الاستلام المرتبطة لتغيير المورد.',
+      );
+  String get colBrs => _t('BR', 'أذون الاستلام');
+
+  // Achats — avoirs fournisseur
   String get searchAvoirFournisseur =>
-      _t('Rechercher numéro, fournisseur…', 'بحث برقم، مورد…');
-  String get emptyAvoirFournisseur => _t(
-        'Aucun avoir fournisseur.\nLe module achats sera connecté prochainement.',
-        'لا يوجد إشعار دائن للمورد.\nسيتم ربط وحدة المشتريات قريباً.',
+      _t('Rechercher numéro, fournisseur, motif…', 'بحث برقم، مورد، سبب…');
+  String get emptyAvoirFournisseur =>
+      _t('Aucun avoir fournisseur.', 'لا يوجد إشعار دائن للمورد.');
+  String get avoirFournisseurNew =>
+      _t('Nouvel avoir fournisseur', 'إشعار دائن جديد للمورد');
+  String get avoirFournisseurSaved =>
+      _t('Avoir fournisseur enregistré.', 'تم حفظ الإشعار الدائن للمورد.');
+  String get fieldMotif => _t('Motif', 'السبب');
+  String get fieldRetourMarchandise =>
+      _t('Retour de marchandise', 'إرجاع البضاعة');
+  String retourMarchandiseHint(String depot) => _t(
+        'Les quantités sortent du stock « $depot ».',
+        'تخرج الكميات من مخزون « $depot ».',
+      );
+  String get noRetourMarchandiseHint => _t(
+        'Avoir sur prix uniquement : aucun mouvement de stock.',
+        'إشعار على السعر فقط: لا توجد حركة مخزون.',
       );
 
   // Placeholder modules — stock & admin

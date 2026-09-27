@@ -4,32 +4,39 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:fes_distribution/business/helpers/document_totals.dart';
 import 'package:fes_distribution/business/models/document_line.dart';
+import 'package:fes_distribution/business/models/document_paiement.dart';
 import 'package:fes_distribution/business/models/linked_document.dart';
 import 'package:fes_distribution/db/app_database.dart';
 import 'package:fes_distribution/ui/common/app_bar_save_button.dart';
 import 'package:fes_distribution/ui/common/confirm_dialog.dart';
 import 'package:fes_distribution/ui/common/document_lines_table.dart';
+import 'package:fes_distribution/ui/common/document_totals_card.dart';
 import 'package:fes_distribution/ui/common/formatters.dart';
+import 'package:fes_distribution/ui/common/fournisseur_field.dart';
 import 'package:fes_distribution/ui/common/linked_document_picker_dialog.dart';
 import 'package:fes_distribution/ui/common/loading_view.dart';
 import 'package:fes_distribution/ui/common/new_tiers_dialog.dart';
+import 'package:fes_distribution/ui/common/paiement_dialog.dart';
+import 'package:fes_distribution/ui/common/product_search_card.dart';
 import 'package:fes_distribution/ui/l10n/strings_scope.dart';
 import 'package:fes_distribution/ui/providers/service_providers.dart';
 import 'package:fes_distribution/ui/theme/app_theme.dart';
 
-/// Facture client. [fromBlId] pre-fills a new facture from one BL
-/// (Peinture "BL → Facture").
-class FactureEditPage extends ConsumerStatefulWidget {
-  const FactureEditPage({super.key, this.factureId, this.fromBlId});
+/// Facture fournisseur. [fromBrId] pre-fills a new facture from one BR
+/// (Peinture "BR → Facture").
+class FactureFournisseurEditPage extends ConsumerStatefulWidget {
+  const FactureFournisseurEditPage({super.key, this.factureId, this.fromBrId});
 
   final int? factureId;
-  final int? fromBlId;
+  final int? fromBrId;
 
   @override
-  ConsumerState<FactureEditPage> createState() => _FactureEditPageState();
+  ConsumerState<FactureFournisseurEditPage> createState() =>
+      _FactureFournisseurEditPageState();
 }
 
-class _FactureEditPageState extends ConsumerState<FactureEditPage> {
+class _FactureFournisseurEditPageState
+    extends ConsumerState<FactureFournisseurEditPage> {
   bool _loading = true;
   bool _saving = false;
 
@@ -39,13 +46,13 @@ class _FactureEditPageState extends ConsumerState<FactureEditPage> {
   bool _estPayee = false;
   final _noteController = TextEditingController();
   final _remiseController = TextEditingController(text: '0');
-  final _bcRefController = TextEditingController();
-  int? _clientId;
+  int? _fournisseurId;
 
-  List<Tier> _clients = [];
+  List<Tier> _fournisseurs = [];
   List<Produit> _produits = [];
   List<DocumentLine> _lines = [];
-  List<LinkedDocument> _bls = [];
+  List<LinkedDocument> _brs = [];
+  List<DocumentPaiement> _paiements = [];
 
   bool get _isNew => widget.factureId == null;
 
@@ -59,7 +66,6 @@ class _FactureEditPageState extends ConsumerState<FactureEditPage> {
   void dispose() {
     _noteController.dispose();
     _remiseController.dispose();
-    _bcRefController.dispose();
     super.dispose();
   }
 
@@ -68,56 +74,67 @@ class _FactureEditPageState extends ConsumerState<FactureEditPage> {
   DocumentTotals get _totals =>
       DocumentTotals.fromLines(_lines, remiseGlobale: _remiseGlobale);
 
+  double get _totalPaye => _paiements.fold(0, (s, p) => s + p.montant);
+
+  double get _reste {
+    final r = _totals.totalTtc - _totalPaye;
+    return r > 0 ? r : 0;
+  }
+
   Future<void> _load() async {
     setState(() => _loading = true);
     try {
       final tiers = ref.read(tiersServiceProvider);
-      final factures = ref.read(factureServiceProvider);
-      final clients = await tiers.listActiveClients();
+      final factures = ref.read(factureFournisseurServiceProvider);
+      final fournisseurs = await tiers.listActiveFournisseurs();
       final produits = await ref.read(produitServiceProvider).listActive();
 
-      int? clientId = clients.isNotEmpty ? clients.first.id : null;
+      int? fournisseurId = fournisseurs.isNotEmpty ? fournisseurs.first.id : null;
       if (!_isNew) {
         final doc = await factures.getById(widget.factureId!);
-        if (doc == null) throw StateError('Facture introuvable.');
+        if (doc == null) throw StateError('Facture fournisseur introuvable.');
         final f = doc.facture;
-        clientId = f.clientId;
+        fournisseurId = f.fournisseurId;
         _numero = f.numero;
         _date = f.date;
         _dateEcheance = f.dateEcheance;
         _estPayee = f.estPayee;
         _remiseController.text = formatInput(f.remiseGlobale);
-        _bcRefController.text = f.bonCommandeReference;
         _noteController.text = f.note;
         _lines = doc.lines;
-        _bls = doc.bls;
-      } else if (widget.fromBlId != null) {
-        final bl =
-            await ref.read(bonLivraisonServiceProvider).getById(widget.fromBlId!);
-        final linked = await factures.getBl(widget.fromBlId!);
-        if (bl == null || linked == null) {
-          throw StateError('Bon de livraison introuvable.');
+        _brs = doc.brs;
+        _paiements = doc.paiements;
+      } else if (widget.fromBrId != null) {
+        final br =
+            await ref.read(bonReceptionServiceProvider).getById(widget.fromBrId!);
+        final linked = await factures.getBr(widget.fromBrId!);
+        if (br == null || linked == null) {
+          throw StateError('Bon de réception introuvable.');
         }
-        if (bl.factureNumero != null) {
-          throw StateError('${bl.bl.numero} est déjà facturé (${bl.factureNumero}).');
+        if (br.factureNumero != null) {
+          throw StateError('${br.br.numero} est déjà facturé (${br.factureNumero}).');
         }
-        clientId = bl.bl.clientId;
-        _lines = await factures.loadBlLines(widget.fromBlId!);
-        _bls = [linked];
+        fournisseurId = br.br.fournisseurId;
+        _lines = await factures.loadBrLines(widget.fromBrId!);
+        _brs = [linked];
       }
 
-      if (clientId != null && !clients.any((c) => c.id == clientId)) {
-        final client = await tiers.getById(clientId);
-        if (client != null) clients.add(client);
+      if (fournisseurId != null && !fournisseurs.any((f) => f.id == fournisseurId)) {
+        final f = await tiers.getById(fournisseurId);
+        if (f != null) fournisseurs.add(f);
       }
-      _clients = clients;
-      _clientId = clientId;
+      _fournisseurs = fournisseurs;
+      _fournisseurId = fournisseurId;
       _produits = produits;
       if (mounted) setState(() => _loading = false);
     } catch (e) {
       if (!mounted) return;
       setState(() => _loading = false);
-      await showErrorDialog(context, title: context.s.menuFactures, message: '$e');
+      await showErrorDialog(
+        context,
+        title: context.s.menuFacturesFournisseur,
+        message: '$e',
+      );
       if (mounted) context.pop();
     }
   }
@@ -125,7 +142,7 @@ class _FactureEditPageState extends ConsumerState<FactureEditPage> {
   void _addProduct(Produit p) {
     setState(() {
       final i = _lines.indexWhere(
-        (l) => l.produitId == p.id && l.bonLivraisonId == null,
+        (l) => l.produitId == p.id && l.bonReceptionId == null,
       );
       if (i >= 0) {
         _lines[i] = _lines[i].copyWith(quantite: _lines[i].quantite + 1);
@@ -136,7 +153,7 @@ class _FactureEditPageState extends ConsumerState<FactureEditPage> {
             reference: p.reference,
             designation: p.designation,
             quantite: 1,
-            prixUnitaireHt: p.prixVenteHT,
+            prixUnitaireHt: p.prixAchatHT,
             tauxTva: p.tauxTVA,
           ),
         );
@@ -144,72 +161,93 @@ class _FactureEditPageState extends ConsumerState<FactureEditPage> {
     });
   }
 
-  Future<void> _newClient() async {
-    final created = await showNewClientDialog(context);
+  Future<void> _newFournisseur() async {
+    final created = await showNewFournisseurDialog(context);
     if (created == null || !mounted) return;
     setState(() {
-      _clients = [..._clients, created]
+      _fournisseurs = [..._fournisseurs, created]
         ..sort((a, b) => a.nom.toLowerCase().compareTo(b.nom.toLowerCase()));
-      _clientId = created.id;
+      _fournisseurId = created.id;
     });
   }
 
-  Future<void> _pickBls() async {
+  Future<void> _pickBrs() async {
     final s = context.s;
-    if (_clientId == null) {
-      await showErrorDialog(context, title: s.addBls, message: s.errSelectClient);
+    if (_fournisseurId == null) {
+      await showErrorDialog(context, title: s.addBrs, message: s.errSelectFournisseur);
       return;
     }
-    final linkedIds = _bls.map((b) => b.id).toSet();
+    final linkedIds = _brs.map((b) => b.id).toSet();
     final available = (await ref
-            .read(factureServiceProvider)
-            .availableBlsForClient(_clientId!))
+            .read(factureFournisseurServiceProvider)
+            .availableBrsForFournisseur(_fournisseurId!))
         .where((b) => !linkedIds.contains(b.id))
         .toList();
     if (!mounted) return;
     if (available.isEmpty) {
-      await showErrorDialog(context, title: s.addBls, message: s.noAvailableBls);
+      await showErrorDialog(context, title: s.addBrs, message: s.noAvailableBrs);
       return;
     }
     final picked = await showLinkedDocumentPicker(
       context,
-      title: s.addBls,
+      title: s.addBrs,
       documents: available,
     );
     if (picked == null || picked.isEmpty) return;
 
-    final factures = ref.read(factureServiceProvider);
+    final factures = ref.read(factureFournisseurServiceProvider);
     final newLines = <DocumentLine>[];
-    for (final bl in picked) {
-      newLines.addAll(await factures.loadBlLines(bl.id));
+    for (final br in picked) {
+      newLines.addAll(await factures.loadBrLines(br.id));
     }
     if (!mounted) return;
     setState(() {
-      _bls = [..._bls, ...picked]..sort((a, b) => a.date.compareTo(b.date));
+      _brs = [..._brs, ...picked]..sort((a, b) => a.date.compareTo(b.date));
       _lines = [..._lines, ...newLines];
     });
   }
 
-  void _removeBl(LinkedDocument bl) {
+  void _removeBr(LinkedDocument br) {
     setState(() {
-      _bls = _bls.where((b) => b.id != bl.id).toList();
-      _lines = _lines.where((l) => l.bonLivraisonId != bl.id).toList();
+      _brs = _brs.where((b) => b.id != br.id).toList();
+      _lines = _lines.where((l) => l.bonReceptionId != br.id).toList();
     });
+  }
+
+  Future<void> _addPaiement() async {
+    final paiement = await showPaiementDialog(context, suggested: _reste);
+    if (paiement == null || !mounted) return;
+    final s = context.s;
+    final total = _totalPaye + paiement.montant;
+    if (DocumentTotals.paymentsExceedTtc(_totals.totalTtc, total)) {
+      await showErrorDialog(
+        context,
+        title: s.paiements,
+        message: s.errPaymentsExceed(formatMoney(total), formatMoney(_totals.totalTtc)),
+      );
+      return;
+    }
+    setState(() => _paiements = [paiement, ..._paiements]);
   }
 
   Future<void> _save() async {
     final s = context.s;
-    final title = s.menuFactures;
+    final title = s.menuFacturesFournisseur;
     final remise = _remiseGlobale;
     String? error;
-    if (_clientId == null) {
-      error = s.errSelectClient;
+    if (_fournisseurId == null) {
+      error = s.errSelectFournisseur;
     } else if (_lines.every((l) => l.produitId <= 0 || l.quantite <= 0)) {
       error = s.errNoLines;
     } else if (remise < 0 || remise > 100) {
       error = s.errRemiseGlobale;
     } else if (DocumentTotals.isEffectivelyZero(_totals.totalTtc)) {
       error = s.errZeroTtc;
+    } else if (DocumentTotals.paymentsExceedTtc(_totals.totalTtc, _totalPaye)) {
+      error = s.errPaymentsExceed(
+        formatMoney(_totalPaye),
+        formatMoney(_totals.totalTtc),
+      );
     }
     if (error != null) {
       await showErrorDialog(context, title: title, message: error);
@@ -218,21 +256,21 @@ class _FactureEditPageState extends ConsumerState<FactureEditPage> {
 
     setState(() => _saving = true);
     try {
-      final id = await ref.read(factureServiceProvider).save(
+      final id = await ref.read(factureFournisseurServiceProvider).save(
             id: widget.factureId,
-            clientId: _clientId!,
+            fournisseurId: _fournisseurId!,
             date: _date,
             dateEcheance: _dateEcheance,
             estPayee: _estPayee,
             remiseGlobale: remise,
-            bonCommandeReference: _bcRefController.text,
             note: _noteController.text,
             lines: _lines,
-            blIds: _bls.map((b) => b.id).toList(),
+            brIds: _brs.map((b) => b.id).toList(),
+            paiements: _paiements,
           );
       if (!mounted) return;
       ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(s.factureSaved)));
+          .showSnackBar(SnackBar(content: Text(s.factureFournisseurSaved)));
       context.pop(id);
     } catch (e) {
       if (mounted) await showErrorDialog(context, title: title, message: '$e');
@@ -242,7 +280,7 @@ class _FactureEditPageState extends ConsumerState<FactureEditPage> {
   }
 
   Future<void> _delete() async {
-    final title = context.s.menuFactures;
+    final title = context.s.menuFacturesFournisseur;
     final ok = await showConfirmDialog(
       context,
       title: title,
@@ -252,7 +290,7 @@ class _FactureEditPageState extends ConsumerState<FactureEditPage> {
 
     setState(() => _saving = true);
     try {
-      await ref.read(factureServiceProvider).delete(widget.factureId!);
+      await ref.read(factureFournisseurServiceProvider).delete(widget.factureId!);
       if (mounted) context.pop();
     } catch (e) {
       if (mounted) await showErrorDialog(context, title: title, message: '$e');
@@ -278,7 +316,7 @@ class _FactureEditPageState extends ConsumerState<FactureEditPage> {
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.pop(),
         ),
-        title: Text(_isNew ? s.factureNew : _numero),
+        title: Text(_isNew ? s.factureFournisseurNew : _numero),
         actions: [
           if (!_isNew)
             IconButton(
@@ -297,27 +335,30 @@ class _FactureEditPageState extends ConsumerState<FactureEditPage> {
           : ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                if (_clients.isEmpty)
+                if (_fournisseurs.isEmpty)
                   Card(
                     color: AppColors.brandSoft,
                     child: Padding(
                       padding: const EdgeInsets.all(16),
-                      child: Text(s.noClient),
+                      child: Text(s.noFournisseur),
                     ),
                   ),
                 _buildHeader(context),
                 const SizedBox(height: 16),
-                _buildBls(context),
+                _buildBrs(context),
                 const SizedBox(height: 16),
-                _buildAddProduct(context),
+                ProductSearchCard(produits: _produits, onSelected: _addProduct),
                 const SizedBox(height: 16),
                 DocumentLinesTable(
                   lines: _lines,
+                  editablePrice: true,
                   onChanged: (i, line) => setState(() => _lines[i] = line),
                   onRemoveAt: (i) => setState(() => _lines.removeAt(i)),
                 ),
                 const SizedBox(height: 16),
                 _buildTotals(context),
+                const SizedBox(height: 16),
+                _buildPaiements(context),
                 const SizedBox(height: 16),
                 Card(
                   child: Padding(
@@ -336,47 +377,19 @@ class _FactureEditPageState extends ConsumerState<FactureEditPage> {
 
   Widget _buildHeader(BuildContext context) {
     final s = context.s;
-    final clientLocked = _bls.isNotEmpty;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Row(
-              children: [
-                Expanded(
-                  child: DropdownButtonFormField<int>(
-                    key: ValueKey('client-$_clientId-${_clients.length}-$clientLocked'),
-                    initialValue: _clientId,
-                    isExpanded: true,
-                    decoration: InputDecoration(
-                      labelText: s.fieldClient,
-                      prefixIcon: const Icon(Icons.person_outline),
-                      helperText: clientLocked ? s.clientLockedByBl : null,
-                    ),
-                    items: [
-                      for (final c in _clients)
-                        DropdownMenuItem(
-                          value: c.id,
-                          child: Text(
-                            c.ville.isEmpty ? c.nom : '${c.nom} — ${c.ville}',
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                    ],
-                    onChanged: clientLocked
-                        ? null
-                        : (v) => setState(() => _clientId = v),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                IconButton.filledTonal(
-                  tooltip: s.newClient,
-                  icon: const Icon(Icons.person_add_alt_1),
-                  onPressed: clientLocked ? null : _newClient,
-                ),
-              ],
+            FournisseurField(
+              fournisseurs: _fournisseurs,
+              value: _fournisseurId,
+              onChanged: (v) => setState(() => _fournisseurId = v),
+              onCreate: _newFournisseur,
+              locked: _brs.isNotEmpty,
+              lockedHelper: s.fournisseurLockedByBr,
             ),
             const SizedBox(height: 12),
             Wrap(
@@ -403,14 +416,6 @@ class _FactureEditPageState extends ConsumerState<FactureEditPage> {
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _bcRefController,
-              decoration: InputDecoration(
-                labelText: s.fieldBonCommandeRef,
-                prefixIcon: const Icon(Icons.tag),
-              ),
-            ),
             const SizedBox(height: 4),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
@@ -424,7 +429,7 @@ class _FactureEditPageState extends ConsumerState<FactureEditPage> {
     );
   }
 
-  Widget _buildBls(BuildContext context) {
+  Widget _buildBrs(BuildContext context) {
     final s = context.s;
     return Card(
       child: Padding(
@@ -435,31 +440,31 @@ class _FactureEditPageState extends ConsumerState<FactureEditPage> {
             Row(
               children: [
                 Expanded(
-                  child: Text(s.linkedBls, style: Theme.of(context).textTheme.titleSmall),
+                  child: Text(s.linkedBrs, style: Theme.of(context).textTheme.titleSmall),
                 ),
                 TextButton.icon(
-                  onPressed: _pickBls,
+                  onPressed: _pickBrs,
                   icon: const Icon(Icons.add),
-                  label: Text(s.addBls),
+                  label: Text(s.addBrs),
                 ),
               ],
             ),
             const SizedBox(height: 8),
-            if (_bls.isEmpty)
-              Text(s.noLinkedBl, style: TextStyle(color: AppColors.muted))
+            if (_brs.isEmpty)
+              Text(s.noLinkedBr, style: TextStyle(color: AppColors.muted))
             else
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
                 children: [
-                  for (final bl in _bls)
+                  for (final br in _brs)
                     InputChip(
-                      avatar: const Icon(Icons.local_shipping_outlined, size: 18),
+                      avatar: const Icon(Icons.move_to_inbox_outlined, size: 18),
                       label: Text(
-                        '${bl.numero} · ${dateFormat.format(bl.date)} · ${formatMoney(bl.totalTtc)}',
+                        '${br.numero} · ${dateFormat.format(br.date)} · ${formatMoney(br.totalTtc)}',
                       ),
                       deleteButtonTooltipMessage: s.actionDelete,
-                      onDeleted: () => _removeBl(bl),
+                      onDeleted: () => _removeBr(br),
                     ),
                 ],
               ),
@@ -469,7 +474,42 @@ class _FactureEditPageState extends ConsumerState<FactureEditPage> {
     );
   }
 
-  Widget _buildAddProduct(BuildContext context) {
+  Widget _buildTotals(BuildContext context) {
+    final s = context.s;
+    return DocumentTotalsCard(
+      totals: _totals,
+      leading: SizedBox(
+        width: 200,
+        child: TextField(
+          controller: _remiseController,
+          decoration: InputDecoration(
+            labelText: s.fieldRemiseGlobale,
+            isDense: true,
+          ),
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          inputFormatters: [
+            FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
+          ],
+          onChanged: (_) => setState(() {}),
+        ),
+      ),
+      extra: [
+        const SizedBox(height: 4),
+        Text(s.montantPaye(formatMoney(_totalPaye))),
+        Text(
+          s.resteAPayer(formatMoney(_reste)),
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            color: _reste > DocumentTotals.paiementTtcTolerance
+                ? AppColors.danger
+                : AppColors.brand,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPaiements(BuildContext context) {
     final s = context.s;
     return Card(
       child: Padding(
@@ -477,77 +517,42 @@ class _FactureEditPageState extends ConsumerState<FactureEditPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(s.addProduct, style: Theme.of(context).textTheme.titleSmall),
-            const SizedBox(height: 8),
-            Autocomplete<Produit>(
-              optionsBuilder: (text) {
-                final t = text.text.toLowerCase();
-                if (t.isEmpty) return _produits.take(20);
-                return _produits.where(
-                  (p) =>
-                      p.reference.toLowerCase().contains(t) ||
-                      p.designation.toLowerCase().contains(t) ||
-                      (p.codeBarre?.toLowerCase().contains(t) ?? false),
-                );
-              },
-              displayStringForOption: (p) => '${p.reference} — ${p.designation}',
-              onSelected: _addProduct,
-              fieldViewBuilder: (context, controller, focusNode, _) {
-                return TextField(
-                  controller: controller,
-                  focusNode: focusNode,
-                  decoration: InputDecoration(
-                    hintText: s.searchProduct,
-                    prefixIcon: const Icon(Icons.search),
-                  ),
-                  onTap: controller.clear,
-                );
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTotals(BuildContext context) {
-    final s = context.s;
-    final totals = _totals;
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Wrap(
-          alignment: WrapAlignment.spaceBetween,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          spacing: 16,
-          runSpacing: 12,
-          children: [
-            SizedBox(
-              width: 200,
-              child: TextField(
-                controller: _remiseController,
-                decoration: InputDecoration(
-                  labelText: s.fieldRemiseGlobale,
-                  isDense: true,
-                ),
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
-                ],
-                onChanged: (_) => setState(() {}),
-              ),
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
+            Row(
               children: [
-                Text(s.totalHt(formatMoney(totals.totalHt))),
-                Text(s.totalTva(formatMoney(totals.totalTva))),
-                Text(
-                  s.totalTtc(formatMoney(totals.totalTtc)),
-                  style: Theme.of(context).textTheme.titleMedium,
+                Expanded(
+                  child: Text(s.paiements, style: Theme.of(context).textTheme.titleSmall),
+                ),
+                TextButton.icon(
+                  onPressed: _addPaiement,
+                  icon: const Icon(Icons.add),
+                  label: Text(s.addPaiement),
                 ),
               ],
             ),
+            if (_paiements.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Text(s.noPaiement, style: TextStyle(color: AppColors.muted)),
+              )
+            else
+              for (var i = 0; i < _paiements.length; i++)
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.payments_outlined),
+                  title: Text(formatMoney(_paiements[i].montant)),
+                  subtitle: Text(
+                    [
+                      dateFormat.format(_paiements[i].date),
+                      _paiements[i].mode.label(s),
+                      if (_paiements[i].reference.isNotEmpty) _paiements[i].reference,
+                    ].join(' · '),
+                  ),
+                  trailing: IconButton(
+                    tooltip: s.actionDelete,
+                    icon: const Icon(Icons.delete_outline, size: 20),
+                    onPressed: () => setState(() => _paiements.removeAt(i)),
+                  ),
+                ),
           ],
         ),
       ),

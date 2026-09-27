@@ -2,7 +2,7 @@ import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fes_distribution/business/enums/mode_paiement.dart';
-import 'package:fes_distribution/business/models/bon_livraison_paiement.dart';
+import 'package:fes_distribution/business/models/document_paiement.dart';
 import 'package:fes_distribution/business/models/document_line.dart';
 import 'package:fes_distribution/business/services/distribution/bons_charge/bon_charge_service.dart';
 import 'package:fes_distribution/business/services/distribution/vendeurs/user_service.dart';
@@ -155,8 +155,8 @@ void main() {
       dateEcheance: today,
       lines: [line(1)],
       paiements: [
-        BonLivraisonPaiement(date: today, montant: 100),
-        BonLivraisonPaiement(
+        DocumentPaiement(date: today, montant: 100),
+        DocumentPaiement(
           date: today,
           montant: 20,
           mode: ModePaiement.credit,
@@ -174,7 +174,7 @@ void main() {
       date: today,
       dateEcheance: today,
       lines: [line(1)],
-      paiements: [BonLivraisonPaiement(date: today, montant: 120)],
+      paiements: [DocumentPaiement(date: today, montant: 120)],
     );
     saved = await service.getById(id);
     expect(saved!.bl.estPayee, isTrue);
@@ -188,7 +188,7 @@ void main() {
         date: today,
         dateEcheance: today,
         lines: [line(1)],
-        paiements: [BonLivraisonPaiement(date: today, montant: 200)],
+        paiements: [DocumentPaiement(date: today, montant: 200)],
       ),
       throwsStateError,
     );

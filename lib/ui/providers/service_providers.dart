@@ -1,4 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fes_distribution/business/services/achats/avoirs_fournisseur/avoir_fournisseur_service.dart';
+import 'package:fes_distribution/business/services/achats/bons_reception/bon_reception_service.dart';
+import 'package:fes_distribution/business/services/achats/factures_fournisseur/facture_fournisseur_service.dart';
 import 'package:fes_distribution/business/services/distribution/bons_charge/bon_charge_service.dart';
 import 'package:fes_distribution/business/services/distribution/bons_decharge/bon_decharge_service.dart';
 import 'package:fes_distribution/business/services/stock/produits/categorie_service.dart';
@@ -91,6 +94,31 @@ final factureServiceProvider = Provider(
 
 final bonDechargeServiceProvider = Provider(
   (ref) => BonDechargeService(
+    ref.watch(databaseProvider),
+    ref.watch(documentNumberServiceProvider),
+    ref.watch(stockLocationServiceProvider),
+    ref.watch(stockMovementServiceProvider),
+  ),
+);
+
+final bonReceptionServiceProvider = Provider(
+  (ref) => BonReceptionService(
+    ref.watch(databaseProvider),
+    ref.watch(documentNumberServiceProvider),
+    ref.watch(stockLocationServiceProvider),
+    ref.watch(stockMovementServiceProvider),
+  ),
+);
+
+final factureFournisseurServiceProvider = Provider(
+  (ref) => FactureFournisseurService(
+    ref.watch(databaseProvider),
+    ref.watch(documentNumberServiceProvider),
+  ),
+);
+
+final avoirFournisseurServiceProvider = Provider(
+  (ref) => AvoirFournisseurService(
     ref.watch(databaseProvider),
     ref.watch(documentNumberServiceProvider),
     ref.watch(stockLocationServiceProvider),

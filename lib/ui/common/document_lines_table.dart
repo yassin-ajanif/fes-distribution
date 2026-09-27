@@ -12,6 +12,7 @@ double parseQty(String text) =>
 /// Editable document lines.
 /// [available] = stock at the source location per product (shown as "Dispo");
 /// null hides the column (documents without stock impact, e.g. facture).
+/// [editablePrice] lets the user type the unit price (purchase documents).
 class DocumentLinesTable extends StatelessWidget {
   const DocumentLinesTable({
     super.key,
@@ -19,12 +20,14 @@ class DocumentLinesTable extends StatelessWidget {
     required this.onChanged,
     required this.onRemoveAt,
     this.available,
+    this.editablePrice = false,
   });
 
   final List<DocumentLine> lines;
   final void Function(int index, DocumentLine line) onChanged;
   final void Function(int index) onRemoveAt;
   final Map<int, double>? available;
+  final bool editablePrice;
 
   @override
   Widget build(BuildContext context) {
@@ -114,12 +117,27 @@ class DocumentLinesTable extends StatelessWidget {
                           onChanged: (q) =>
                               onChanged(i, lines[i].copyWith(quantite: q)),
                         ),
+                        if (editablePrice) ...[
+                          const SizedBox(height: 8),
+                          _QtyCell(
+                            value: lines[i].prixUnitaireHt,
+                            decoration: InputDecoration(
+                              labelText: s.colPuHt,
+                              isDense: true,
+                            ),
+                            onChanged: (p) => onChanged(
+                              i,
+                              lines[i].copyWith(prixUnitaireHt: p),
+                            ),
+                          ),
+                        ],
                         const SizedBox(height: 8),
                         Wrap(
                           alignment: WrapAlignment.spaceBetween,
                           spacing: 12,
                           children: [
-                            Text('${s.colPuHt}: ${formatMoney(lines[i].prixUnitaireHt)}'),
+                            if (!editablePrice)
+                              Text('${s.colPuHt}: ${formatMoney(lines[i].prixUnitaireHt)}'),
                             Text(
                               'TTC: ${formatMoney(lines[i].montantTtc)}',
                               style: const TextStyle(fontWeight: FontWeight.w600),
@@ -191,7 +209,22 @@ class DocumentLinesTable extends StatelessWidget {
                     ),
                   ),
                   if (available != null) DataCell(_dispoText(lines[i])),
-                  DataCell(Text(formatMoney(lines[i].prixUnitaireHt))),
+                  DataCell(
+                    editablePrice
+                        ? SizedBox(
+                            width: 100,
+                            child: _QtyCell(
+                              key: ValueKey('pu-${lines[i].key}'),
+                              value: lines[i].prixUnitaireHt,
+                              decoration: const InputDecoration(isDense: true),
+                              onChanged: (p) => onChanged(
+                                i,
+                                lines[i].copyWith(prixUnitaireHt: p),
+                              ),
+                            ),
+                          )
+                        : Text(formatMoney(lines[i].prixUnitaireHt)),
+                  ),
                   DataCell(Text(formatQty(lines[i].remise))),
                   DataCell(Text(formatQty(lines[i].tauxTva))),
                   DataCell(Text(formatMoney(lines[i].montantHt))),

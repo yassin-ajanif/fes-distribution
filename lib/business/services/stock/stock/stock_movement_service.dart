@@ -14,6 +14,8 @@ class StockMovementService {
   final StockBalanceService _balance;
 
   static const origineTypeBonLivraison = 'BL';
+  static const origineTypeBonReception = 'BR';
+  static const origineTypeAvoirFournisseur = 'AvoirFournisseur';
   static const origineTypeBonCharge = 'BCH';
   static const origineTypeBonDecharge = 'BDH';
   static const origineTypeInventaire = 'Inventaire';
@@ -152,28 +154,126 @@ class StockMovementService {
     required int vendeurLocationId,
     required Iterable<({int produitId, double quantite})> lines,
     int? createdByUserId,
-  }) async {
-    final desired = <int, double>{};
-    for (final line in lines) {
-      if (line.produitId <= 0 || line.quantite <= 0) continue;
-      desired[line.produitId] = (desired[line.produitId] ?? 0) - line.quantite;
+  }) =>
+      _resyncDocumentAtLocation(
+        origineType: origineTypeBonLivraison,
+        origineId: bonLivraisonId,
+        noteDetail: noteDetail,
+        locationId: vendeurLocationId,
+        desiredSignedByProduit: _sumByProduit(lines, sign: -1),
+        createdByUserId: createdByUserId,
+      );
+
+  /// A bon de réception brings [lines] into [depotLocationId] (the default
+  /// depot) and updates each product's `PrixAchatHT` to the weighted average
+  /// cost (Peinture `SyncBonReceptionStockAsync`). Empty [lines] cancels the
+  /// BR's whole stock impact.
+  Future<void> resyncBonReceptionStock({
+    required int bonReceptionId,
+    required String noteDetail,
+    required int depotLocationId,
+    required Iterable<({int produitId, double quantite, double prixUnitaireHt})>
+        lines,
+    int? createdByUserId,
+  }) {
+    final valid =
+        lines.where((l) => l.produitId > 0 && l.quantite > 0).toList();
+    final qtyByProduit = <int, double>{};
+    final valueByProduit = <int, double>{};
+    for (final l in valid) {
+      qtyByProduit[l.produitId] = (qtyByProduit[l.produitId] ?? 0) + l.quantite;
+      valueByProduit[l.produitId] =
+          (valueByProduit[l.produitId] ?? 0) + l.quantite * l.prixUnitaireHt;
     }
 
+    return _resyncDocumentAtLocation(
+      origineType: origineTypeBonReception,
+      origineId: bonReceptionId,
+      noteDetail: noteDetail,
+      locationId: depotLocationId,
+      desiredSignedByProduit: qtyByProduit,
+      createdByUserId: createdByUserId,
+      onEntree: (produitId, entreeDelta) async {
+        final totalQty = qtyByProduit[produitId];
+        if (totalQty == null || totalQty <= 0) return;
+        final newPrice = valueByProduit[produitId]! / totalQty;
+        final produit = await (_db.select(_db.produits)
+              ..where((p) => p.id.equals(produitId)))
+            .getSingleOrNull();
+        if (produit == null) return;
+        final balanceAfter = await _balance.getStock(produitId, depotLocationId);
+        final oldQty = balanceAfter - entreeDelta;
+        final newQty = oldQty + entreeDelta;
+        if (newQty <= 0) return;
+        final prixAchat =
+            (oldQty * produit.prixAchatHT + entreeDelta * newPrice) / newQty;
+        await (_db.update(_db.produits)..where((p) => p.id.equals(produitId)))
+            .write(ProduitsCompanion(prixAchatHT: Value(prixAchat)));
+      },
+    );
+  }
+
+  /// A supplier credit note with goods returned takes [lines] out of
+  /// [depotLocationId] (the default depot). Without [retourMarchandise] — or
+  /// with empty [lines] — the avoir has no stock impact.
+  Future<void> resyncAvoirFournisseurStock({
+    required int avoirFournisseurId,
+    required String noteDetail,
+    required int depotLocationId,
+    required bool retourMarchandise,
+    required Iterable<({int produitId, double quantite})> lines,
+    int? createdByUserId,
+  }) =>
+      _resyncDocumentAtLocation(
+        origineType: origineTypeAvoirFournisseur,
+        origineId: avoirFournisseurId,
+        noteDetail: noteDetail,
+        locationId: depotLocationId,
+        desiredSignedByProduit:
+            retourMarchandise ? _sumByProduit(lines, sign: -1) : const {},
+        createdByUserId: createdByUserId,
+      );
+
+  static Map<int, double> _sumByProduit(
+    Iterable<({int produitId, double quantite})> lines, {
+    required int sign,
+  }) {
+    final result = <int, double>{};
+    for (final line in lines) {
+      if (line.produitId <= 0 || line.quantite <= 0) continue;
+      result[line.produitId] =
+          (result[line.produitId] ?? 0) + sign * line.quantite;
+    }
+    return result;
+  }
+
+  /// Brings a single-location document to [desiredSignedByProduit] at
+  /// [locationId]. Movements it left on any other location (location changed)
+  /// are reversed first.
+  Future<void> _resyncDocumentAtLocation({
+    required String origineType,
+    required int origineId,
+    required String noteDetail,
+    required int locationId,
+    required Map<int, double> desiredSignedByProduit,
+    int? createdByUserId,
+    Future<void> Function(int produitId, double entreeDelta)? onEntree,
+  }) async {
     final prior = await (_db.select(_db.mouvementsStock)
           ..where(
             (m) =>
-                m.origineType.equals(origineTypeBonLivraison) &
-                m.origineId.equals(bonLivraisonId),
+                m.origineType.equals(origineType) &
+                m.origineId.equals(origineId),
           ))
         .get();
     final otherLocationIds = {
       for (final m in prior) ...[m.fromLocationId, m.toLocationId],
-    }.whereType<int>().where((id) => id != vendeurLocationId);
+    }.whereType<int>().where((id) => id != locationId);
 
     for (final oldLocationId in otherLocationIds) {
       await _syncSingleLocationDocumentStock(
-        origineType: origineTypeBonLivraison,
-        origineId: bonLivraisonId,
+        origineType: origineType,
+        origineId: origineId,
         noteDetail: noteDetail,
         desiredSignedByProduit: const {},
         locationId: oldLocationId,
@@ -181,12 +281,13 @@ class StockMovementService {
       );
     }
     await _syncSingleLocationDocumentStock(
-      origineType: origineTypeBonLivraison,
-      origineId: bonLivraisonId,
+      origineType: origineType,
+      origineId: origineId,
       noteDetail: noteDetail,
-      desiredSignedByProduit: desired,
-      locationId: vendeurLocationId,
+      desiredSignedByProduit: desiredSignedByProduit,
+      locationId: locationId,
       createdByUserId: createdByUserId,
+      onEntree: onEntree,
     );
   }
 
@@ -197,6 +298,7 @@ class StockMovementService {
     required Map<int, double> desiredSignedByProduit,
     required int locationId,
     int? createdByUserId,
+    Future<void> Function(int produitId, double entreeDelta)? onEntree,
   }) async {
     final movements = await (_db.select(_db.mouvementsStock)
           ..where(
@@ -243,6 +345,7 @@ class StockMovementService {
         note: note,
         createdByUserId: createdByUserId,
       );
+      if (delta > 0 && onEntree != null) await onEntree(produitId, delta);
     }
   }
 

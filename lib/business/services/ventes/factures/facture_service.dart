@@ -2,7 +2,7 @@ import 'package:drift/drift.dart';
 import 'package:fes_distribution/business/helpers/document_totals.dart';
 import 'package:fes_distribution/business/models/document_line.dart';
 import 'package:fes_distribution/business/models/facture_list_item.dart';
-import 'package:fes_distribution/business/models/linked_bl.dart';
+import 'package:fes_distribution/business/models/linked_document.dart';
 import 'package:fes_distribution/business/services/stock/parametres/document_number_service.dart';
 import 'package:fes_distribution/db/app_database.dart';
 
@@ -74,7 +74,7 @@ class FactureService {
     ];
   }
 
-  Future<({Facture facture, List<DocumentLine> lines, List<LinkedBl> bls})?>
+  Future<({Facture facture, List<DocumentLine> lines, List<LinkedDocument> bls})?>
       getById(int id) async {
     final facture = await (_db.select(_db.factures)
           ..where((f) => f.id.equals(id)))
@@ -109,13 +109,13 @@ class FactureService {
             bonLivraisonId: l.bonLivraisonId,
           ),
       ],
-      bls: blRows.map(_toLinkedBl).toList(),
+      bls: blRows.map(_toLinkedDocument).toList(),
     );
   }
 
   /// BLs of [clientId] that are not invoiced yet (Peinture
   /// `GetAvailableBlsForClientAsync`).
-  Future<List<LinkedBl>> availableBlsForClient(int clientId) async {
+  Future<List<LinkedDocument>> availableBlsForClient(int clientId) async {
     final rows = await (_db.select(_db.bonsLivraison)
           ..where((b) => b.clientId.equals(clientId) & b.factureId.isNull())
           ..orderBy([
@@ -123,14 +123,14 @@ class FactureService {
             (b) => OrderingTerm.asc(b.numero),
           ]))
         .get();
-    return rows.map(_toLinkedBl).toList();
+    return rows.map(_toLinkedDocument).toList();
   }
 
-  Future<LinkedBl?> getBl(int blId) async {
+  Future<LinkedDocument?> getBl(int blId) async {
     final bl = await (_db.select(_db.bonsLivraison)
           ..where((b) => b.id.equals(blId)))
         .getSingleOrNull();
-    return bl == null ? null : _toLinkedBl(bl);
+    return bl == null ? null : _toLinkedDocument(bl);
   }
 
   /// The BL's delivered quantities as facture lines.
@@ -320,7 +320,7 @@ class FactureService {
     return {for (final p in products) p.id: p.reference};
   }
 
-  static LinkedBl _toLinkedBl(BonsLivraisonData b) => LinkedBl(
+  static LinkedDocument _toLinkedDocument(BonsLivraisonData b) => LinkedDocument(
         id: b.id,
         numero: b.numero,
         date: b.date,

@@ -130,8 +130,8 @@ Stock vendeur → BonLivraison (sale) / RemiseCaisse
 | BonCharge / BonDecharge | source / destination | destination / source |
 | BonLivraison (sale) | **never** | always — stock leaves the vendeur's car |
 | Avoir client (return) | never | goods return to the vendeur's car |
-| BonReception (purchase) | goods enter a depot | never |
-| AvoirFournisseur | goods leave a depot | never |
+| BonReception (purchase) | goods enter the default depot ("Dépôt principal"); updates `Produits.PrixAchatHT` (weighted average) | never |
+| AvoirFournisseur | goods leave the default depot (only when `RetourMarchandise`) | never |
 
 Peinture seeds a pseudo-vendeur `admin` / phone `DEPOT-PRINCIPAL` so a BL can be sold from the depot. FesDistribution **does not** create it (existing rows are removed on open), and `BonsLivraison.VendeurId` must always reference a real vendeur.
 

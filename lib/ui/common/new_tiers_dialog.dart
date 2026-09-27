@@ -6,17 +6,28 @@ import 'package:fes_distribution/ui/l10n/strings_scope.dart';
 import 'package:fes_distribution/ui/providers/service_providers.dart';
 
 /// Quick client creation from a sales document. Pops the created [Tier].
-Future<Tier?> showNewClientDialog(BuildContext context) =>
-    showDialog<Tier>(context: context, builder: (_) => const _NewClientDialog());
+Future<Tier?> showNewClientDialog(BuildContext context) => showDialog<Tier>(
+      context: context,
+      builder: (_) => const _NewTiersDialog(fournisseur: false),
+    );
 
-class _NewClientDialog extends ConsumerStatefulWidget {
-  const _NewClientDialog();
+/// Quick supplier creation from a purchase document. Pops the created [Tier].
+Future<Tier?> showNewFournisseurDialog(BuildContext context) =>
+    showDialog<Tier>(
+      context: context,
+      builder: (_) => const _NewTiersDialog(fournisseur: true),
+    );
+
+class _NewTiersDialog extends ConsumerStatefulWidget {
+  const _NewTiersDialog({required this.fournisseur});
+
+  final bool fournisseur;
 
   @override
-  ConsumerState<_NewClientDialog> createState() => _NewClientDialogState();
+  ConsumerState<_NewTiersDialog> createState() => _NewTiersDialogState();
 }
 
-class _NewClientDialogState extends ConsumerState<_NewClientDialog> {
+class _NewTiersDialogState extends ConsumerState<_NewTiersDialog> {
   final _formKey = GlobalKey<FormState>();
   final _nom = TextEditingController();
   final _telephone = TextEditingController();
@@ -31,19 +42,29 @@ class _NewClientDialogState extends ConsumerState<_NewClientDialog> {
     super.dispose();
   }
 
+  String get _title =>
+      widget.fournisseur ? context.s.newFournisseur : context.s.newClient;
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _saving = true);
     try {
-      final client = await ref.read(tiersServiceProvider).createClient(
-            nom: _nom.text,
-            telephone: _telephone.text,
-            ville: _ville.text,
-          );
-      if (mounted) Navigator.of(context).pop(client);
+      final tiers = ref.read(tiersServiceProvider);
+      final created = widget.fournisseur
+          ? await tiers.createFournisseur(
+              nom: _nom.text,
+              telephone: _telephone.text,
+              ville: _ville.text,
+            )
+          : await tiers.createClient(
+              nom: _nom.text,
+              telephone: _telephone.text,
+              ville: _ville.text,
+            );
+      if (mounted) Navigator.of(context).pop(created);
     } catch (e) {
       if (mounted) {
-        await showErrorDialog(context, title: context.s.newClient, message: '$e');
+        await showErrorDialog(context, title: _title, message: '$e');
       }
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -54,7 +75,7 @@ class _NewClientDialogState extends ConsumerState<_NewClientDialog> {
   Widget build(BuildContext context) {
     final s = context.s;
     return AlertDialog(
-      title: Text(s.newClient),
+      title: Text(_title),
       content: Form(
         key: _formKey,
         child: Column(

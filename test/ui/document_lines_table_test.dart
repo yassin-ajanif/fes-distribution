@@ -97,4 +97,31 @@ void main() {
     expect(find.widgetWithText(TextField, 'BL2'), findsOneWidget);
     expect(find.textContaining('Dispo'), findsNothing);
   });
+
+  testWidgets('purchase lines: unit price is editable', (tester) async {
+    DocumentLine? changed;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: StringsScope(
+          strings: AppStrings(AppLanguage.french),
+          child: Scaffold(
+            body: SingleChildScrollView(
+              child: DocumentLinesTable(
+                lines: [
+                  DocumentLine(produitId: 1, reference: 'A', designation: 'Blanc', quantite: 2, prixUnitaireHt: 50, bonReceptionId: 7),
+                ],
+                editablePrice: true,
+                onChanged: (_, l) => changed = l,
+                onRemoveAt: (_) {},
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.enterText(find.widgetWithText(TextField, '50'), '62,5');
+    expect(changed!.prixUnitaireHt, 62.5);
+    expect(changed!.bonReceptionId, 7);
+  });
 }
