@@ -7,15 +7,28 @@ class ProduitService {
 
   final AppDatabase _db;
 
-  Future<List<Produit>> listActive({String? search}) =>
-      _list(search: search, activeOnly: true);
+  Future<List<Produit>> listActive({
+    String? search,
+    int? limit,
+    int? offset,
+  }) => _list(search: search, activeOnly: true, limit: limit, offset: offset);
 
-  Future<List<Produit>> listCatalog({String? search}) =>
-      _list(search: search, activeOnly: false);
+  Future<List<Produit>> listCatalog({
+    String? search,
+    int? limit,
+    int? offset,
+  }) => _list(
+    search: search,
+    activeOnly: false,
+    limit: limit,
+    offset: offset,
+  );
 
   Future<List<Produit>> _list({
     String? search,
     required bool activeOnly,
+    int? limit,
+    int? offset,
   }) async {
     final query = _db.select(_db.produits);
     Expression<bool> predicate = activeOnly
@@ -31,9 +44,16 @@ class ProduitService {
       predicate = predicate & searchPredicate;
     }
 
-    final rows = await (query..where((p) => predicate)).get();
-    rows.sort((a, b) => a.reference.compareTo(b.reference));
-    return rows;
+    // Order in SQL, not in Dart: limit/offset pages are only stable if the
+    // database decides the order, otherwise pages can repeat or skip rows.
+    query
+      ..where((p) => predicate)
+      ..orderBy([(p) => OrderingTerm.asc(p.reference)]);
+    if (limit != null) {
+      query.limit(limit, offset: offset ?? 0);
+    }
+
+    return query.get();
   }
 
   Future<Produit?> getById(int id) => (_db.select(

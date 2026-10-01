@@ -19,10 +19,16 @@ class ProduitsPage extends ConsumerStatefulWidget {
 }
 
 class _ProduitsPageState extends ConsumerState<ProduitsPage> {
+  /// How many products are fetched per page.
+  static const _pageSize = 50;
+
   final _searchController = TextEditingController();
   List<Produit> _produits = [];
   Map<int, double> _stockDepots = {};
   bool _loading = true;
+  bool _loadingMore = false;
+  bool _hasMore = true;
+  int _offset = 0;
 
   @override
   void initState() {
@@ -36,25 +42,25 @@ class _ProduitsPageState extends ConsumerState<ProduitsPage> {
     super.dispose();
   }
 
-  Future<void> _load() async {
-    setState(() => _loading = true);
+  Future<void> _load({int? limit, bool silent = false}) async {
+    final requested = limit ?? _pageSize;
+    setState(() {
+      // A silent refresh keeps the current grid (and its scroll position) on
+      // screen while the data is re-read.
+      if (!silent) _loading = true;
+      _loadingMore = false;
+    });
     try {
       final produits = await ref
           .read(produitServiceProvider)
-          .listCatalog(search: _searchController.text);
-      final depots = await ref
-          .read(stockLocationServiceProvider)
-          .getActivePhysicalLocations();
-      final balance = ref.read(stockBalanceServiceProvider);
-      final totals = <int, double>{};
-      for (final depot in depots) {
-        final stocks = await balance.getAllStocksAtLocation(depot.id);
-        stocks.forEach((id, qty) => totals[id] = (totals[id] ?? 0) + qty);
-      }
+          .listCatalog(search: _searchController.text, limit: requested);
+      final totals = await _loadStockTotals();
       if (!mounted) return;
       setState(() {
         _produits = produits;
         _stockDepots = totals;
+        _offset = produits.length;
+        _hasMore = produits.length == requested;
         _loading = false;
       });
     } catch (e) {
@@ -69,9 +75,60 @@ class _ProduitsPageState extends ConsumerState<ProduitsPage> {
     }
   }
 
+  /// Fetches the next page and appends it; called as the grid nears its end.
+  Future<void> _loadMore() async {
+    if (_loading || _loadingMore || !_hasMore) return;
+    setState(() => _loadingMore = true);
+    try {
+      final next = await ref
+          .read(produitServiceProvider)
+          .listCatalog(
+            search: _searchController.text,
+            limit: _pageSize,
+            offset: _offset,
+          );
+      if (!mounted) return;
+      setState(() {
+        _produits = [..._produits, ...next];
+        _offset += next.length;
+        _hasMore = next.length == _pageSize;
+        _loadingMore = false;
+      });
+    } catch (e) {
+      if (mounted) {
+        setState(() => _loadingMore = false);
+        await showErrorDialog(
+          context,
+          title: context.s.menuProduits,
+          message: '$e',
+        );
+      }
+    }
+  }
+
+  Future<Map<int, double>> _loadStockTotals() async {
+    final depots = await ref
+        .read(stockLocationServiceProvider)
+        .getActivePhysicalLocations();
+    final balance = ref.read(stockBalanceServiceProvider);
+    final totals = <int, double>{};
+    for (final depot in depots) {
+      final stocks = await balance.getAllStocksAtLocation(depot.id);
+      stocks.forEach((id, qty) => totals[id] = (totals[id] ?? 0) + qty);
+    }
+    return totals;
+  }
+
+  /// Re-reads the range already loaded so that returning from an edit keeps
+  /// the user where they were instead of jumping back to the first page.
+  Future<void> _refreshLoaded() => _load(
+    limit: _produits.isEmpty ? null : _produits.length,
+    silent: true,
+  );
+
   Future<void> _open(String path) async {
     await context.push(path);
-    if (mounted) _load();
+    if (mounted) await _refreshLoaded();
   }
 
   @override
@@ -84,7 +141,7 @@ class _ProduitsPageState extends ConsumerState<ProduitsPage> {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            onPressed: _loading ? null : _load,
+            onPressed: _loading ? null : _refreshLoaded,
           ),
         ],
       ),
@@ -127,6 +184,9 @@ class _ProduitsPageState extends ConsumerState<ProduitsPage> {
                 : _ProduitGrid(
                     produits: _produits,
                     stock: _stockDepots,
+                    hasMore: _hasMore,
+                    loadingMore: _loadingMore,
+                    onLoadMore: _loadMore,
                     onTap: (p) => _open('/stock/produits/${p.id}'),
                   ),
           ),
@@ -140,32 +200,63 @@ class _ProduitGrid extends StatelessWidget {
   const _ProduitGrid({
     required this.produits,
     required this.stock,
+    required this.hasMore,
+    required this.loadingMore,
+    required this.onLoadMore,
     required this.onTap,
   });
 
   final List<Produit> produits;
   final Map<int, double> stock;
+  final bool hasMore;
+  final bool loadingMore;
+  final VoidCallback onLoadMore;
   final ValueChanged<Produit> onTap;
 
   @override
   Widget build(BuildContext context) {
-    return GridView.builder(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 88),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: produitGridColumns(context),
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-        childAspectRatio: 0.76,
-      ),
-      itemCount: produits.length,
-      itemBuilder: (context, index) {
-        final p = produits[index];
-        return _ProduitCard(
-          produit: p,
-          qty: stock[p.id] ?? 0,
-          onTap: () => onTap(p),
-        );
+    return NotificationListener<ScrollNotification>(
+      // Fetch the next page before the user actually reaches the bottom so the
+      // grid keeps filling without a visible pause.
+      onNotification: (notification) {
+        if (hasMore &&
+            !loadingMore &&
+            notification.metrics.extentAfter < 400) {
+          onLoadMore();
+        }
+        return false;
       },
+      child: CustomScrollView(
+        slivers: [
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+            sliver: SliverGrid(
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: produitGridColumns(context),
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+                childAspectRatio: 0.76,
+              ),
+              delegate: SliverChildBuilderDelegate((context, index) {
+                final p = produits[index];
+                return _ProduitCard(
+                  produit: p,
+                  qty: stock[p.id] ?? 0,
+                  onTap: () => onTap(p),
+                );
+              }, childCount: produits.length),
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 88),
+              child: hasMore
+                  ? const Center(child: CircularProgressIndicator())
+                  : const SizedBox.shrink(),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
