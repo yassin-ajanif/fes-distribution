@@ -2,7 +2,9 @@ import 'dart:typed_data';
 
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:image/image.dart' as img;
 import 'package:fes_distribution/business/models/produit_input.dart';
+import 'package:fes_distribution/business/services/stock/produits/produit_image_service.dart';
 import 'package:fes_distribution/business/services/stock/produits/produit_service.dart';
 import 'package:fes_distribution/db/app_database.dart';
 
@@ -114,5 +116,45 @@ void main() {
       ),
       throwsStateError,
     );
+  });
+
+  group('ProduitImageService', () {
+    const imageService = ProduitImageService();
+
+    test('downscales a large landscape photo to 600 px wide', () async {
+      final big = img.Image(width: 1600, height: 1200);
+      img.fill(big, color: img.ColorRgb8(120, 30, 200));
+      final raw = Uint8List.fromList(img.encodeJpg(big, quality: 95));
+
+      final decoded = img.decodeImage(await imageService.prepare(raw))!;
+
+      expect(decoded.width, 600);
+      expect(decoded.height, 450);
+    });
+
+    test('downscales a large portrait photo to 600 px tall', () async {
+      final big = img.Image(width: 900, height: 1500);
+      img.fill(big, color: img.ColorRgb8(10, 200, 90));
+      final raw = Uint8List.fromList(img.encodeJpg(big, quality: 95));
+
+      final decoded = img.decodeImage(await imageService.prepare(raw))!;
+
+      expect(decoded.width, 360);
+      expect(decoded.height, 600);
+    });
+
+    test('stays at the configured 600 px cap', () {
+      expect(ProduitImageService.maxDimension, 600);
+      expect(ProduitImageService.jpegQuality, 75);
+    });
+
+    test('returns an already-small image untouched', () async {
+      final small = img.Image(width: 400, height: 300);
+      final raw = Uint8List.fromList(img.encodeJpg(small, quality: 90));
+
+      final out = await imageService.prepare(raw);
+
+      expect(identical(out, raw), isTrue);
+    });
   });
 }

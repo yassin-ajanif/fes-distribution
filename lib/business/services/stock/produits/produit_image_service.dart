@@ -10,11 +10,15 @@ class ProduitImageService {
   const ProduitImageService();
 
   /// Longest edge of the stored thumbnail, in pixels.
-  static const maxDimension = 800;
+  ///
+  /// 600 px is enough for the 3-per-row catalog grid on a phone (~130 logical
+  /// px per card, ~390 physical px at 3x) while keeping each photo around
+  /// 30-65 KB instead of the 60-150 KB an 800 px image costs.
+  static const maxDimension = 600;
 
-  /// JPEG quality used when re-encoding. 80 keeps product photos visually
-  /// clean at thumbnail size while staying around 60-120 KB.
-  static const jpegQuality = 80;
+  /// JPEG quality used when re-encoding. 75 is visually clean at catalog
+  /// size and roughly halves the file compared to quality 85.
+  static const jpegQuality = 75;
 
   /// Downscales [bytes] and re-encodes them as JPEG.
   ///
