@@ -25,6 +25,7 @@ class AppStrings {
   String get menuBl => _t('Bons de livraison', 'بون التسليم');
   String get menuFactures => _t('Factures', 'الفواتير');
   String get menuAvoirs => _t('Avoirs', 'بون الإرجاع');
+  String get menuSoldeClients => _t('Solde clients', 'أرصدة العملاء');
   String get menuBr => _t('Bons réception', 'بون الاستلام');
   String get menuFacturesFournisseur =>
       _t('Factures fournisseur', 'فواتير الشراء');
@@ -255,6 +256,22 @@ class AppStrings {
     'Aucun produit.\nAppuyez sur « Nouveau » pour en ajouter.',
     'لا يوجد منتج.\nاضغط على « جديد » لإضافة منتج.',
   );
+
+  // Solde clients
+  String get searchClients => _t('Rechercher un client…', 'بحث عن عميل…');
+  String get emptyClientsSolde => _t(
+    'Aucun client ne doit d\'argent.',
+    'لا يوجد	client مدين.',
+  );
+  String get totalDu => _t('Total dû', 'المجموع المستحق');
+  String get balanceDelivered => _t('Livré', 'تم التسليم');
+  String get balancePaid => _t('Payé', 'مدفوع');
+  String get balanceCreditNotes => _t('Avoirs', 'الإرجاعات');
+  String balanceBlCount(int n) =>
+      _t('$n bon(s) de livraison', 'بون تسليم $n');
+  String get filterAllClients => _t('Tous les clients', 'كل العملاء');
+  String get balanceSettled => _t('Soldé', 'مسدد');
+  String get balanceDetails => _t('Détail des livraisons', 'تفصيل التسليمات');
 
   // Produits
   String get produitNew => _t('Nouveau produit', 'منتج جديد');

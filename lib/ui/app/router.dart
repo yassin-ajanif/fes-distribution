@@ -24,6 +24,8 @@ import 'package:fes_distribution/ui/stock/produit_edit_page.dart';
 import 'package:fes_distribution/ui/stock/produits_page.dart';
 import 'package:fes_distribution/ui/stock/stock_page.dart';
 import 'package:fes_distribution/ui/stock/stock_transfer_page.dart';
+import 'package:fes_distribution/ui/ventes/client_balance_detail_page.dart';
+import 'package:fes_distribution/ui/ventes/client_balance_page.dart';
 import 'package:fes_distribution/ui/personnel/vendeurs_page.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -170,6 +172,22 @@ GoRouter createRouter() {
                 builder: (context, state) {
                   final id = int.parse(state.pathParameters['id']!);
                   return AvoirEditPage(avoirId: id);
+                },
+              ),
+            ],
+          ),
+          GoRoute(
+            path: '/ventes/solde-clients',
+            pageBuilder: (context, state) => const NoTransitionPage(
+              child: ClientBalancePage(),
+            ),
+            routes: [
+              GoRoute(
+                path: ':id',
+                parentNavigatorKey: _rootNavigatorKey,
+                builder: (context, state) {
+                  final id = int.parse(state.pathParameters['id']!);
+                  return ClientBalanceDetailPage(clientId: id);
                 },
               ),
             ],

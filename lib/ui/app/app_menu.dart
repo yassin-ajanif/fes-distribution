@@ -50,6 +50,7 @@ class AppMenu {
       '/ventes/bons-livraison',
       '/ventes/factures',
       '/ventes/avoirs',
+      '/ventes/solde-clients',
     ],
     [
       '/achats/bons-reception',
@@ -108,6 +109,12 @@ class AppMenu {
               icon: Icons.undo_outlined,
               selectedIcon: Icons.undo,
               route: '/ventes/avoirs',
+            ),
+            AppMenuItem(
+              label: strings.menuSoldeClients,
+              icon: Icons.account_balance_wallet_outlined,
+              selectedIcon: Icons.account_balance_wallet,
+              route: '/ventes/solde-clients',
             ),
           ],
         ),
