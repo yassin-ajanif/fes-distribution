@@ -31,6 +31,7 @@ class AppStrings {
       _t('Factures fournisseur', 'فواتير الشراء');
   String get menuAvoirsFournisseur =>
       _t('Avoirs fournisseur', 'بون الإرجاع للمورد');
+  String get menuCharges => _t('Charges', 'المصاريف');
   String get menuStock => _t('Stock', 'المخزون');
   String get menuProduits => _t('Produits', 'المنتجات');
   String get menuRapports => _t('Rapports', 'التقارير');
@@ -259,16 +260,13 @@ class AppStrings {
 
   // Solde clients
   String get searchClients => _t('Rechercher un client…', 'بحث عن عميل…');
-  String get emptyClientsSolde => _t(
-    'Aucun client ne doit d\'argent.',
-    'لا يوجد	client مدين.',
-  );
+  String get emptyClientsSolde =>
+      _t('Aucun client ne doit d\'argent.', 'لا يوجد	client مدين.');
   String get totalDu => _t('Total dû', 'المجموع المستحق');
   String get balanceDelivered => _t('Livré', 'تم التسليم');
   String get balancePaid => _t('Payé', 'مدفوع');
   String get balanceCreditNotes => _t('Avoirs', 'الإرجاعات');
-  String balanceBlCount(int n) =>
-      _t('$n bon(s) de livraison', 'بون تسليم $n');
+  String balanceBlCount(int n) => _t('$n bon(s) de livraison', 'بون تسليم $n');
   String get filterAllClients => _t('Tous les clients', 'كل العملاء');
   String get balanceSettled => _t('Soldé', 'مسدد');
   String get balanceDetails => _t('Détail des livraisons', 'تفصيل التسليمات');
@@ -281,15 +279,40 @@ class AppStrings {
   String get filterAllFournisseurs =>
       _t('Tous les fournisseurs', 'كل الموردين');
   String get totalAPayer => _t('Total à payer', 'المجموع المستحق للموردين');
-  String get emptyFournisseursSolde => _t(
-    'Aucun fournisseur à payer.',
-    'لا يوجد مورد للفاتورة.',
-  );
+  String get emptyFournisseursSolde =>
+      _t('Aucun fournisseur à payer.', 'لا يوجد مورد للفاتورة.');
   String get balanceReceived => _t('Reçu', 'تم الاستلام');
-  String balanceBrCount(int n) =>
-      _t('$n bon(s) de réception', 'بون استلام $n');
+  String balanceBrCount(int n) => _t('$n bon(s) de réception', 'بون استلام $n');
   String get balanceBrDetails =>
       _t('Détail des réceptions', 'تفصيل الاستلامات');
+
+  // Charges
+  String get searchCharge =>
+      _t('Rechercher libellé, type…', 'بحث بالاسم، النوع…');
+  String get emptyCharges =>
+      _t('Aucune charge enregistrée.', 'لا توجد مصاريف مسجلة.');
+  String get chargeNew => _t('Nouvelle charge', 'مصروف جديد');
+  String get chargeSaved => _t('Charge enregistrée.', 'تم حفظ المصروف.');
+  String get fieldTypeCharge => _t('Type de charge', 'نوع المصروف');
+  String get fieldLibelle => _t('Libellé', 'الاسم');
+  String get fieldNote => _t('Note', 'ملاحظة');
+  String get newTypeCharge => _t('Nouveau type', 'نوع جديد');
+  String get totalCharges => _t('Total des charges', 'مجموع المصاريف');
+  String deleteChargeConfirm(String libelle) =>
+      _t('Supprimer la charge « $libelle » ?', 'حذف المصروف « $libelle » ؟');
+  String get errSelectTypeCharge =>
+      _t('Sélectionnez un type de charge.', 'اختر نوع المصروف.');
+  String get errLibelleRequired =>
+      _t('Le libellé est obligatoire.', 'الاسم إجباري.');
+  String get errMontantRequired => _t(
+    'Le montant doit être supérieur à 0.',
+    'يجب أن يكون المبلغ أكبر من 0.',
+  );
+  String get noTypeCharge => _t(
+    'Aucun type de charge. Créez-en un pour commencer.',
+    'لا يوجد نوع مصروف. أنشئ نوعاً للبدء.',
+  );
+  String chargeCount(int n) => _t('$n charge(s)', 'مصروف $n');
 
   // Produits
   String get produitNew => _t('Nouveau produit', 'منتج جديد');

@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fes_distribution/business/services/achats/avoirs_fournisseur/avoir_fournisseur_service.dart';
+import 'package:fes_distribution/business/services/finance/charges/charge_service.dart';
 import 'package:fes_distribution/business/services/achats/bons_reception/bon_reception_service.dart';
 import 'package:fes_distribution/business/services/achats/solde_fournisseur/supplier_balance_service.dart';
 import 'package:fes_distribution/business/services/achats/factures_fournisseur/facture_fournisseur_service.dart';
@@ -24,6 +25,10 @@ import 'package:fes_distribution/db/app_database.dart';
 final databaseProvider = Provider<AppDatabase>((ref) {
   throw UnimplementedError('databaseProvider must be overridden in main.dart');
 });
+
+final chargeServiceProvider = Provider(
+  (ref) => ChargeService(ref.watch(databaseProvider)),
+);
 
 final stockLocationServiceProvider = Provider(
   (ref) => StockLocationService(ref.watch(databaseProvider)),

@@ -26,6 +26,8 @@ import 'package:fes_distribution/ui/stock/produit_edit_page.dart';
 import 'package:fes_distribution/ui/stock/produits_page.dart';
 import 'package:fes_distribution/ui/stock/stock_page.dart';
 import 'package:fes_distribution/ui/stock/stock_transfer_page.dart';
+import 'package:fes_distribution/ui/finance/charge_edit_page.dart';
+import 'package:fes_distribution/ui/finance/charges_list_page.dart';
 import 'package:fes_distribution/ui/ventes/client_balance_detail_page.dart';
 import 'package:fes_distribution/ui/ventes/client_balance_page.dart';
 import 'package:fes_distribution/ui/personnel/vendeurs_page.dart';
@@ -44,9 +46,8 @@ GoRouter createRouter() {
         routes: [
           GoRoute(
             path: '/distribution/vendeurs',
-            pageBuilder: (context, state) => const NoTransitionPage(
-              child: VendeursPage(),
-            ),
+            pageBuilder: (context, state) =>
+                const NoTransitionPage(child: VendeursPage()),
             routes: [
               GoRoute(
                 path: 'new',
@@ -65,9 +66,8 @@ GoRouter createRouter() {
           ),
           GoRoute(
             path: '/distribution/bons-charge',
-            pageBuilder: (context, state) => const NoTransitionPage(
-              child: BonChargeListPage(),
-            ),
+            pageBuilder: (context, state) =>
+                const NoTransitionPage(child: BonChargeListPage()),
             routes: [
               GoRoute(
                 path: 'new',
@@ -86,9 +86,8 @@ GoRouter createRouter() {
           ),
           GoRoute(
             path: '/distribution/bons-decharge',
-            pageBuilder: (context, state) => const NoTransitionPage(
-              child: BonDechargeListPage(),
-            ),
+            pageBuilder: (context, state) =>
+                const NoTransitionPage(child: BonDechargeListPage()),
             routes: [
               GoRoute(
                 path: 'new',
@@ -107,9 +106,8 @@ GoRouter createRouter() {
           ),
           GoRoute(
             path: '/ventes/bons-livraison',
-            pageBuilder: (context, state) => const NoTransitionPage(
-              child: BlListPage(),
-            ),
+            pageBuilder: (context, state) =>
+                const NoTransitionPage(child: BlListPage()),
             routes: [
               GoRoute(
                 path: 'new',
@@ -128,9 +126,8 @@ GoRouter createRouter() {
           ),
           GoRoute(
             path: '/ventes/factures',
-            pageBuilder: (context, state) => const NoTransitionPage(
-              child: FactureListPage(),
-            ),
+            pageBuilder: (context, state) =>
+                const NoTransitionPage(child: FactureListPage()),
             routes: [
               GoRoute(
                 path: 'new',
@@ -154,9 +151,8 @@ GoRouter createRouter() {
           ),
           GoRoute(
             path: '/ventes/avoirs',
-            pageBuilder: (context, state) => const NoTransitionPage(
-              child: AvoirListPage(),
-            ),
+            pageBuilder: (context, state) =>
+                const NoTransitionPage(child: AvoirListPage()),
             routes: [
               GoRoute(
                 path: 'new',
@@ -164,7 +160,9 @@ GoRouter createRouter() {
                 builder: (context, state) {
                   final facture = state.uri.queryParameters['facture'];
                   return AvoirEditPage(
-                    fromFactureId: facture == null ? null : int.tryParse(facture),
+                    fromFactureId: facture == null
+                        ? null
+                        : int.tryParse(facture),
                   );
                 },
               ),
@@ -180,9 +178,8 @@ GoRouter createRouter() {
           ),
           GoRoute(
             path: '/ventes/solde-clients',
-            pageBuilder: (context, state) => const NoTransitionPage(
-              child: ClientBalancePage(),
-            ),
+            pageBuilder: (context, state) =>
+                const NoTransitionPage(child: ClientBalancePage()),
             routes: [
               GoRoute(
                 path: ':id',
@@ -196,9 +193,8 @@ GoRouter createRouter() {
           ),
           GoRoute(
             path: '/achats/bons-reception',
-            pageBuilder: (context, state) => const NoTransitionPage(
-              child: BrListPage(),
-            ),
+            pageBuilder: (context, state) =>
+                const NoTransitionPage(child: BrListPage()),
             routes: [
               GoRoute(
                 path: 'new',
@@ -217,9 +213,8 @@ GoRouter createRouter() {
           ),
           GoRoute(
             path: '/achats/factures-fournisseur',
-            pageBuilder: (context, state) => const NoTransitionPage(
-              child: FactureFournisseurListPage(),
-            ),
+            pageBuilder: (context, state) =>
+                const NoTransitionPage(child: FactureFournisseurListPage()),
             routes: [
               GoRoute(
                 path: 'new',
@@ -243,9 +238,8 @@ GoRouter createRouter() {
           ),
           GoRoute(
             path: '/achats/avoirs-fournisseur',
-            pageBuilder: (context, state) => const NoTransitionPage(
-              child: AvoirFournisseurListPage(),
-            ),
+            pageBuilder: (context, state) =>
+                const NoTransitionPage(child: AvoirFournisseurListPage()),
             routes: [
               GoRoute(
                 path: 'new',
@@ -264,9 +258,8 @@ GoRouter createRouter() {
           ),
           GoRoute(
             path: '/achats/solde-fournisseurs',
-            pageBuilder: (context, state) => const NoTransitionPage(
-              child: SupplierBalancePage(),
-            ),
+            pageBuilder: (context, state) =>
+                const NoTransitionPage(child: SupplierBalancePage()),
             routes: [
               GoRoute(
                 path: ':id',
@@ -280,9 +273,8 @@ GoRouter createRouter() {
           ),
           GoRoute(
             path: '/stock/produits',
-            pageBuilder: (context, state) => const NoTransitionPage(
-              child: ProduitsPage(),
-            ),
+            pageBuilder: (context, state) =>
+                const NoTransitionPage(child: ProduitsPage()),
             routes: [
               GoRoute(
                 path: 'new',
@@ -301,9 +293,8 @@ GoRouter createRouter() {
           ),
           GoRoute(
             path: '/stock',
-            pageBuilder: (context, state) => const NoTransitionPage(
-              child: StockPage(),
-            ),
+            pageBuilder: (context, state) =>
+                const NoTransitionPage(child: StockPage()),
             routes: [
               GoRoute(
                 path: 'transfert',
@@ -313,16 +304,34 @@ GoRouter createRouter() {
             ],
           ),
           GoRoute(
+            path: '/admin/charges',
+            pageBuilder: (context, state) =>
+                const NoTransitionPage(child: ChargesListPage()),
+            routes: [
+              GoRoute(
+                path: 'new',
+                parentNavigatorKey: _rootNavigatorKey,
+                builder: (context, state) => const ChargeEditPage(),
+              ),
+              GoRoute(
+                path: ':id',
+                parentNavigatorKey: _rootNavigatorKey,
+                builder: (context, state) {
+                  final id = int.parse(state.pathParameters['id']!);
+                  return ChargeEditPage(chargeId: id);
+                },
+              ),
+            ],
+          ),
+          GoRoute(
             path: '/admin/rapports',
-            pageBuilder: (context, state) => const NoTransitionPage(
-              child: ReportsPage(),
-            ),
+            pageBuilder: (context, state) =>
+                const NoTransitionPage(child: ReportsPage()),
           ),
           GoRoute(
             path: '/admin/parametres',
-            pageBuilder: (context, state) => const NoTransitionPage(
-              child: SettingsPage(),
-            ),
+            pageBuilder: (context, state) =>
+                const NoTransitionPage(child: SettingsPage()),
           ),
         ],
       ),

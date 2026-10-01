@@ -48,6 +48,7 @@ void main() {
 
     await _tapSection(tester, 'Stock & administration');
     expect(_menuText('Stock', mobile: true), findsOneWidget);
+    expect(_menuText('Charges', mobile: true), findsOneWidget);
     expect(_menuText('Paramètres', mobile: true), findsOneWidget);
     expect(_menuText('Bons réception', mobile: true), findsNothing);
   });

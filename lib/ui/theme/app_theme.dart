@@ -9,6 +9,7 @@ class AppColors {
   static const muted = Color(0xFF5A6B5E);
   static const line = Color(0xFFCDE5CF);
   static const danger = Color(0xFFC0392B);
+  static const dangerSoft = Color(0xFFFBE9E7);
 }
 
 ThemeData buildAppTheme() {
