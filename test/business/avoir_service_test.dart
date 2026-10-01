@@ -29,12 +29,12 @@ void main() {
   late int factureId;
 
   DocumentLine line(double qty) => DocumentLine(
-        produitId: productId,
-        designation: 'Peinture',
-        quantite: qty,
-        prixUnitaireHt: 100,
-        tauxTva: 20,
-      );
+    produitId: productId,
+    designation: 'Peinture',
+    quantite: qty,
+    prixUnitaireHt: 100,
+    tauxTva: 20,
+  );
 
   setUp(() async {
     db = AppDatabase(NativeDatabase.memory());
@@ -48,7 +48,9 @@ void main() {
     final bls = BonLivraisonService(db, numbers, locations, stock);
 
     final now = DateTime.now().toUtc();
-    productId = await db.into(db.produits).insert(
+    productId = await db
+        .into(db.produits)
+        .insert(
           ProduitsCompanion.insert(
             reference: 'P-AVO',
             designation: 'Peinture',
@@ -57,7 +59,9 @@ void main() {
             updatedAt: now,
           ),
         );
-    await db.into(db.mouvementsStock).insert(
+    await db
+        .into(db.mouvementsStock)
+        .insert(
           MouvementsStockCompanion.insert(
             produitId: productId,
             toLocationId: const Value(1),
@@ -82,7 +86,9 @@ void main() {
       note: '',
       lines: [line(10)],
     );
-    clientId = (await TiersService(db).createClient(nom: 'Client')).id;
+    clientId = (await TiersService(
+      db,
+    ).createClient(nom: 'Client', telephone: '0601000001')).id;
     final blId = await bls.save(
       clientId: clientId,
       vendeurId: vendeurA,
@@ -103,52 +109,54 @@ void main() {
     await db.close();
   });
 
-  test('returned goods go back to the vendeur car; edit, switch, delete',
-      () async {
-    expect(await balance.getStock(productId, carA), 5);
-    expect(await avoirs.vendeurForFacture(factureId), vendeurA);
-    final lines = await avoirs.loadFactureLines(factureId);
-    expect(lines.single.quantite, 1);
+  test(
+    'returned goods go back to the vendeur car; edit, switch, delete',
+    () async {
+      expect(await balance.getStock(productId, carA), 5);
+      expect(await avoirs.vendeurForFacture(factureId), vendeurA);
+      final lines = await avoirs.loadFactureLines(factureId);
+      expect(lines.single.quantite, 1);
 
-    final id = await avoirs.save(
-      clientId: clientId,
-      factureId: factureId,
-      date: DateTime.now(),
-      vendeurId: vendeurA,
-      lines: [line(2)],
-    );
-    expect(await balance.getStock(productId, carA), 7);
-    final saved = await avoirs.getById(id);
-    expect(saved!.avoir.numero, startsWith('AVO-'));
-    expect(saved.vendeurId, vendeurA);
-    final row = (await avoirs.list()).single;
-    expect(row.totalTtc, closeTo(240, 0.001));
-    expect(row.factureNumero, startsWith('FAC-'));
+      final id = await avoirs.save(
+        clientId: clientId,
+        factureId: factureId,
+        date: DateTime.now(),
+        vendeurId: vendeurA,
+        lines: [line(2)],
+      );
+      expect(await balance.getStock(productId, carA), 7);
+      final saved = await avoirs.getById(id);
+      expect(saved!.avoir.numero, startsWith('AVO-'));
+      expect(saved.vendeurId, vendeurA);
+      final row = (await avoirs.list()).single;
+      expect(row.totalTtc, closeTo(240, 0.001));
+      expect(row.factureNumero, startsWith('FAC-'));
 
-    await avoirs.save(
-      id: id,
-      clientId: clientId,
-      factureId: factureId,
-      date: DateTime.now(),
-      vendeurId: vendeurB,
-      lines: [line(2)],
-    );
-    expect(await balance.getStock(productId, carA), 5);
-    expect(await balance.getStock(productId, carB), 2);
-    expect((await avoirs.getById(id))!.vendeurId, vendeurB);
+      await avoirs.save(
+        id: id,
+        clientId: clientId,
+        factureId: factureId,
+        date: DateTime.now(),
+        vendeurId: vendeurB,
+        lines: [line(2)],
+      );
+      expect(await balance.getStock(productId, carA), 5);
+      expect(await balance.getStock(productId, carB), 2);
+      expect((await avoirs.getById(id))!.vendeurId, vendeurB);
 
-    await avoirs.save(
-      id: id,
-      clientId: clientId,
-      date: DateTime.now(),
-      retourMarchandise: false,
-      lines: [line(2)],
-    );
-    expect(await balance.getStock(productId, carB), 0);
-    expect((await avoirs.getById(id))!.vendeurId, isNull);
+      await avoirs.save(
+        id: id,
+        clientId: clientId,
+        date: DateTime.now(),
+        retourMarchandise: false,
+        lines: [line(2)],
+      );
+      expect(await balance.getStock(productId, carB), 0);
+      expect((await avoirs.getById(id))!.vendeurId, isNull);
 
-    await expectLater(factures.delete(factureId), completes);
-  });
+      await expectLater(factures.delete(factureId), completes);
+    },
+  );
 
   test('avoirs on a facture cannot exceed its TTC', () async {
     expect(await avoirs.remainingOnFacture(factureId), closeTo(600, 0.001));

@@ -13,6 +13,7 @@ import 'package:fes_distribution/ui/common/formatters.dart';
 import 'package:fes_distribution/ui/common/loading_view.dart';
 import 'package:fes_distribution/ui/common/new_tiers_dialog.dart';
 import 'package:fes_distribution/ui/common/product_search_card.dart';
+import 'package:fes_distribution/ui/common/tiers_label.dart';
 import 'package:fes_distribution/ui/l10n/strings_scope.dart';
 import 'package:fes_distribution/ui/providers/service_providers.dart';
 import 'package:fes_distribution/ui/theme/app_theme.dart';
@@ -117,15 +118,20 @@ class _AvoirEditPageState extends ConsumerState<AvoirEditPage> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _loading = false);
-      await showErrorDialog(context, title: context.s.menuAvoirs, message: '$e');
+      await showErrorDialog(
+        context,
+        title: context.s.menuAvoirs,
+        message: '$e',
+      );
       if (mounted) context.pop();
     }
   }
 
   Future<void> _refreshFactures() async {
     final avoirs = ref.read(avoirServiceProvider);
-    _factures =
-        _clientId == null ? [] : await avoirs.facturesForClient(_clientId!);
+    _factures = _clientId == null
+        ? []
+        : await avoirs.facturesForClient(_clientId!);
     _reste = _factureId == null
         ? null
         : await avoirs.remainingOnFacture(
@@ -148,7 +154,8 @@ class _AvoirEditPageState extends ConsumerState<AvoirEditPage> {
     setState(() => _factureId = id);
     if (id != null) {
       final hasLines = _lines.any((l) => l.produitId > 0);
-      final replace = !hasLines ||
+      final replace =
+          !hasLines ||
           await showConfirmDialog(
             context,
             title: context.s.menuAvoirs,
@@ -217,7 +224,9 @@ class _AvoirEditPageState extends ConsumerState<AvoirEditPage> {
 
     setState(() => _saving = true);
     try {
-      final id = await ref.read(avoirServiceProvider).save(
+      final id = await ref
+          .read(avoirServiceProvider)
+          .save(
             id: widget.avoirId,
             clientId: _clientId!,
             factureId: _factureId,
@@ -259,12 +268,9 @@ class _AvoirEditPageState extends ConsumerState<AvoirEditPage> {
   }
 
   Widget _banner(String text) => Card(
-        color: AppColors.brandSoft,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Text(text),
-        ),
-      );
+    color: AppColors.brandSoft,
+    child: Padding(padding: const EdgeInsets.all(16), child: Text(text)),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -284,10 +290,7 @@ class _AvoirEditPageState extends ConsumerState<AvoirEditPage> {
               icon: const Icon(Icons.delete_outline),
               onPressed: _saving ? null : _delete,
             ),
-          AppBarSaveButton(
-            onPressed: _loading ? null : _save,
-            saving: _saving,
-          ),
+          AppBarSaveButton(onPressed: _loading ? null : _save, saving: _saving),
         ],
       ),
       body: _loading
@@ -300,10 +303,7 @@ class _AvoirEditPageState extends ConsumerState<AvoirEditPage> {
                   _banner(s.noActiveVendeur),
                 _buildHeader(context),
                 const SizedBox(height: 16),
-                ProductSearchCard(
-                  produits: _produits,
-                  onSelected: _addProduct,
-                ),
+                ProductSearchCard(produits: _produits, onSelected: _addProduct),
                 const SizedBox(height: 16),
                 DocumentLinesTable(
                   lines: _lines,
@@ -334,7 +334,8 @@ class _AvoirEditPageState extends ConsumerState<AvoirEditPage> {
     final clientLocked = _factureId != null;
     final reste = _reste;
     final overReste =
-        reste != null && _totals.totalTtc > reste + DocumentTotals.paiementTtcTolerance;
+        reste != null &&
+        _totals.totalTtc > reste + DocumentTotals.paiementTtcTolerance;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -345,7 +346,9 @@ class _AvoirEditPageState extends ConsumerState<AvoirEditPage> {
               children: [
                 Expanded(
                   child: DropdownButtonFormField<int>(
-                    key: ValueKey('client-$_clientId-${_clients.length}-$clientLocked'),
+                    key: ValueKey(
+                      'client-$_clientId-${_clients.length}-$clientLocked',
+                    ),
                     initialValue: _clientId,
                     isExpanded: true,
                     decoration: InputDecoration(
@@ -358,7 +361,7 @@ class _AvoirEditPageState extends ConsumerState<AvoirEditPage> {
                         DropdownMenuItem(
                           value: c.id,
                           child: Text(
-                            c.ville.isEmpty ? c.nom : '${c.nom} — ${c.ville}',
+                            tiersLabel(c),
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
@@ -376,7 +379,9 @@ class _AvoirEditPageState extends ConsumerState<AvoirEditPage> {
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<int?>(
-              key: ValueKey('facture-$_clientId-$_factureId-${_factures.length}'),
+              key: ValueKey(
+                'facture-$_clientId-$_factureId-${_factures.length}',
+              ),
               initialValue: _factureId,
               isExpanded: true,
               decoration: InputDecoration(
@@ -385,7 +390,9 @@ class _AvoirEditPageState extends ConsumerState<AvoirEditPage> {
                 helperText: reste == null
                     ? null
                     : s.resteSurFacture(formatMoney(reste)),
-                helperStyle: overReste ? TextStyle(color: AppColors.danger) : null,
+                helperStyle: overReste
+                    ? TextStyle(color: AppColors.danger)
+                    : null,
               ),
               items: [
                 DropdownMenuItem<int?>(
@@ -443,7 +450,13 @@ class _AvoirEditPageState extends ConsumerState<AvoirEditPage> {
                 ),
                 items: [
                   for (final u in _vendeurs)
-                    DropdownMenuItem(value: u.id, child: Text(u.fullName)),
+                    DropdownMenuItem(
+                      value: u.id,
+                      child: Text(
+                        vendeurLabel(u),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
                 ],
                 onChanged: (v) => setState(() => _vendeurId = v),
               ),

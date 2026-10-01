@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fes_distribution/db/app_database.dart';
+import 'package:fes_distribution/ui/common/tiers_label.dart';
 import 'package:fes_distribution/ui/l10n/strings_scope.dart';
 
 /// Supplier dropdown with a quick-create button, shared by the achats forms.
@@ -41,10 +42,7 @@ class FournisseurField extends StatelessWidget {
               for (final f in fournisseurs)
                 DropdownMenuItem(
                   value: f.id,
-                  child: Text(
-                    f.ville.isEmpty ? f.nom : '${f.nom} — ${f.ville}',
-                    overflow: TextOverflow.ellipsis,
-                  ),
+                  child: Text(tiersLabel(f), overflow: TextOverflow.ellipsis),
                 ),
             ],
             onChanged: locked ? null : onChanged,

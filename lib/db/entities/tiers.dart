@@ -10,7 +10,7 @@ class Tiers extends Table {
   TextColumn get ice => text()();
   TextColumn get adresse => text()();
   TextColumn get ville => text()();
-  TextColumn get telephone => text()();
+  TextColumn get telephone => text().withLength(min: 1, max: 50).unique()();
   TextColumn get email => text()();
   TextColumn get conditionsPaiement => text()();
   RealColumn get maxCredit => real().nullable()();

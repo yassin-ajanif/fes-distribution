@@ -9,6 +9,7 @@ import 'package:fes_distribution/ui/common/app_bar_save_button.dart';
 import 'package:fes_distribution/ui/common/confirm_dialog.dart';
 import 'package:fes_distribution/ui/common/formatters.dart';
 import 'package:fes_distribution/ui/common/loading_view.dart';
+import 'package:fes_distribution/ui/common/tiers_label.dart';
 import 'package:fes_distribution/ui/l10n/strings_scope.dart';
 import 'package:fes_distribution/ui/common/document_lines_table.dart';
 import 'package:fes_distribution/ui/providers/service_providers.dart';
@@ -117,8 +118,9 @@ class _PersonnelDocumentEditPageState
     try {
       final users = ref.read(userServiceProvider);
       final vendeurs = await users.listActiveVendeurs();
-      final depots =
-          await ref.read(stockLocationServiceProvider).getActivePhysicalLocations();
+      final depots = await ref
+          .read(stockLocationServiceProvider)
+          .getActivePhysicalLocations();
       final produits = await ref.read(produitServiceProvider).listActive();
 
       _LoadedDoc? doc;
@@ -154,9 +156,7 @@ class _PersonnelDocumentEditPageState
           userId: doc.userId,
           depotId: doc.depotId,
         );
-        _savedQty = {
-          for (final l in doc.lines) l.produitId: l.quantite,
-        };
+        _savedQty = {for (final l in doc.lines) l.produitId: l.quantite};
       }
       await _refreshAvailable();
       if (mounted) setState(() => _loading = false);
@@ -173,8 +173,9 @@ class _PersonnelDocumentEditPageState
     if (cached != null) return cached;
     final user = await ref.read(userServiceProvider).getById(userId);
     if (user == null) return null;
-    final car =
-        await ref.read(stockLocationServiceProvider).getOrCreateVirtualForUser(user);
+    final car = await ref
+        .read(stockLocationServiceProvider)
+        .getOrCreateVirtualForUser(user);
     return _carByUser[userId] = car.id;
   }
 
@@ -184,7 +185,10 @@ class _PersonnelDocumentEditPageState
   }
 
   Future<void> _refreshAvailable() async {
-    final sourceId = await _sourceLocationId(userId: _userId, depotId: _depotId);
+    final sourceId = await _sourceLocationId(
+      userId: _userId,
+      depotId: _depotId,
+    );
     if (sourceId == null) {
       _available = {};
       return;
@@ -212,13 +216,13 @@ class _PersonnelDocumentEditPageState
   DocumentTotals get _totals => DocumentTotals.fromLines(_lines);
 
   DocumentLine _lineFor(Produit p, double qty) => DocumentLine(
-        produitId: p.id,
-        reference: p.reference,
-        designation: p.designation,
-        quantite: qty,
-        prixUnitaireHt: p.prixVenteHT,
-        tauxTva: p.tauxTVA,
-      );
+    produitId: p.id,
+    reference: p.reference,
+    designation: p.designation,
+    quantite: qty,
+    prixUnitaireHt: p.prixVenteHT,
+    tauxTva: p.tauxTVA,
+  );
 
   void _addProduct(Produit p) {
     setState(() {
@@ -238,7 +242,11 @@ class _PersonnelDocumentEditPageState
         if ((_available[p.id] ?? 0) > 0) _lineFor(p, _available[p.id]!),
     ];
     if (full.isEmpty) {
-      await showErrorDialog(context, title: s.unloadAll, message: s.unloadAllEmpty);
+      await showErrorDialog(
+        context,
+        title: s.unloadAll,
+        message: s.unloadAllEmpty,
+      );
       return;
     }
     if (_lines.isNotEmpty) {
@@ -272,18 +280,21 @@ class _PersonnelDocumentEditPageState
 
     setState(() => _saving = true);
     try {
-      final sourceId =
-          await _sourceLocationId(userId: _userId, depotId: _depotId);
+      final sourceId = await _sourceLocationId(
+        userId: _userId,
+        depotId: _depotId,
+      );
       final stockLines = _lines
           .where((l) => l.produitId > 0 && l.quantite > 0)
           .map((l) => (produitId: l.produitId, quantite: l.quantite));
-      final shortages =
-          await ref.read(stockMovementServiceProvider).getOutboundShortages(
-                fromLocationId: sourceId!,
-                desiredOutboundLines: stockLines,
-                origineType: _origineType,
-                origineId: widget.bonId,
-              );
+      final shortages = await ref
+          .read(stockMovementServiceProvider)
+          .getOutboundShortages(
+            fromLocationId: sourceId!,
+            desiredOutboundLines: stockLines,
+            origineType: _origineType,
+            origineId: widget.bonId,
+          );
       if (!mounted) return;
       if (shortages.isNotEmpty) {
         final ok = await showStockShortageDialog(
@@ -302,7 +313,9 @@ class _PersonnelDocumentEditPageState
 
       final int id;
       if (_isCharge) {
-        id = await ref.read(bonChargeServiceProvider).save(
+        id = await ref
+            .read(bonChargeServiceProvider)
+            .save(
               id: widget.bonId,
               assignedToUserId: _userId!,
               depotLocationId: _depotId!,
@@ -311,7 +324,9 @@ class _PersonnelDocumentEditPageState
               lines: _lines,
             );
       } else {
-        id = await ref.read(bonDechargeServiceProvider).save(
+        id = await ref
+            .read(bonDechargeServiceProvider)
+            .save(
               id: widget.bonId,
               assignedToUserId: _userId!,
               depotLocationId: _depotId!,
@@ -322,7 +337,9 @@ class _PersonnelDocumentEditPageState
       }
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_isCharge ? s.bonChargeSaved : s.bonDechargeSaved)),
+        SnackBar(
+          content: Text(_isCharge ? s.bonChargeSaved : s.bonDechargeSaved),
+        ),
       );
       context.pop(id);
     } catch (e) {
@@ -443,7 +460,10 @@ class _PersonnelDocumentEditPageState
       ),
       items: [
         for (final u in _vendeurs)
-          DropdownMenuItem(value: u.id, child: Text(u.fullName)),
+          DropdownMenuItem(
+            value: u.id,
+            child: Text(vendeurLabel(u), overflow: TextOverflow.ellipsis),
+          ),
       ],
       onChanged: (v) {
         if (v != null) _onSourceChanged(userId: v);
@@ -458,7 +478,8 @@ class _PersonnelDocumentEditPageState
         prefixIcon: const Icon(Icons.warehouse_outlined),
       ),
       items: [
-        for (final d in _depots) DropdownMenuItem(value: d.id, child: Text(d.nom)),
+        for (final d in _depots)
+          DropdownMenuItem(value: d.id, child: Text(d.nom)),
       ],
       onChanged: (v) {
         if (v != null) _onSourceChanged(depotId: v);
@@ -485,8 +506,15 @@ class _PersonnelDocumentEditPageState
               ],
             ),
             const SizedBox(height: 12),
-            if (_isCharge) ...[depotField, const SizedBox(height: 12), vendeurField]
-            else ...[vendeurField, const SizedBox(height: 12), depotField],
+            if (_isCharge) ...[
+              depotField,
+              const SizedBox(height: 12),
+              vendeurField,
+            ] else ...[
+              vendeurField,
+              const SizedBox(height: 12),
+              depotField,
+            ],
             const SizedBox(height: 12),
             OutlinedButton.icon(
               onPressed: _pickDate,
@@ -510,7 +538,10 @@ class _PersonnelDocumentEditPageState
             Row(
               children: [
                 Expanded(
-                  child: Text(s.addProduct, style: Theme.of(context).textTheme.titleSmall),
+                  child: Text(
+                    s.addProduct,
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
                 ),
                 if (!_isCharge)
                   TextButton.icon(

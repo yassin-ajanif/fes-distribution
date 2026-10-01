@@ -480,8 +480,13 @@ class $TiersTable extends Tiers with TableInfo<$TiersTable, Tier> {
     'telephone',
     aliasedName,
     false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 1,
+      maxTextLength: 50,
+    ),
     type: DriftSqlType.string,
     requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
   );
   static const VerificationMeta _emailMeta = const VerificationMeta('email');
   @override

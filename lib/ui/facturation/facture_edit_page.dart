@@ -13,6 +13,7 @@ import 'package:fes_distribution/ui/common/formatters.dart';
 import 'package:fes_distribution/ui/common/linked_document_picker_dialog.dart';
 import 'package:fes_distribution/ui/common/loading_view.dart';
 import 'package:fes_distribution/ui/common/new_tiers_dialog.dart';
+import 'package:fes_distribution/ui/common/tiers_label.dart';
 import 'package:fes_distribution/ui/l10n/strings_scope.dart';
 import 'package:fes_distribution/ui/providers/service_providers.dart';
 import 'package:fes_distribution/ui/theme/app_theme.dart';
@@ -92,14 +93,17 @@ class _FactureEditPageState extends ConsumerState<FactureEditPage> {
         _lines = doc.lines;
         _bls = doc.bls;
       } else if (widget.fromBlId != null) {
-        final bl =
-            await ref.read(bonLivraisonServiceProvider).getById(widget.fromBlId!);
+        final bl = await ref
+            .read(bonLivraisonServiceProvider)
+            .getById(widget.fromBlId!);
         final linked = await factures.getBl(widget.fromBlId!);
         if (bl == null || linked == null) {
           throw StateError('Bon de livraison introuvable.');
         }
         if (bl.factureNumero != null) {
-          throw StateError('${bl.bl.numero} est déjà facturé (${bl.factureNumero}).');
+          throw StateError(
+            '${bl.bl.numero} est déjà facturé (${bl.factureNumero}).',
+          );
         }
         clientId = bl.bl.clientId;
         _lines = await factures.loadBlLines(widget.fromBlId!);
@@ -117,7 +121,11 @@ class _FactureEditPageState extends ConsumerState<FactureEditPage> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _loading = false);
-      await showErrorDialog(context, title: context.s.menuFactures, message: '$e');
+      await showErrorDialog(
+        context,
+        title: context.s.menuFactures,
+        message: '$e',
+      );
       if (mounted) context.pop();
     }
   }
@@ -157,18 +165,27 @@ class _FactureEditPageState extends ConsumerState<FactureEditPage> {
   Future<void> _pickBls() async {
     final s = context.s;
     if (_clientId == null) {
-      await showErrorDialog(context, title: s.addBls, message: s.errSelectClient);
+      await showErrorDialog(
+        context,
+        title: s.addBls,
+        message: s.errSelectClient,
+      );
       return;
     }
     final linkedIds = _bls.map((b) => b.id).toSet();
-    final available = (await ref
-            .read(factureServiceProvider)
-            .availableBlsForClient(_clientId!))
-        .where((b) => !linkedIds.contains(b.id))
-        .toList();
+    final available =
+        (await ref
+                .read(factureServiceProvider)
+                .availableBlsForClient(_clientId!))
+            .where((b) => !linkedIds.contains(b.id))
+            .toList();
     if (!mounted) return;
     if (available.isEmpty) {
-      await showErrorDialog(context, title: s.addBls, message: s.noAvailableBls);
+      await showErrorDialog(
+        context,
+        title: s.addBls,
+        message: s.noAvailableBls,
+      );
       return;
     }
     final picked = await showLinkedDocumentPicker(
@@ -218,7 +235,9 @@ class _FactureEditPageState extends ConsumerState<FactureEditPage> {
 
     setState(() => _saving = true);
     try {
-      final id = await ref.read(factureServiceProvider).save(
+      final id = await ref
+          .read(factureServiceProvider)
+          .save(
             id: widget.factureId,
             clientId: _clientId!,
             date: _date,
@@ -269,11 +288,11 @@ class _FactureEditPageState extends ConsumerState<FactureEditPage> {
   }
 
   Future<DateTime?> _pick(DateTime initial) => showDatePicker(
-        context: context,
-        initialDate: initial,
-        firstDate: DateTime(2020),
-        lastDate: DateTime(2100),
-      );
+    context: context,
+    initialDate: initial,
+    firstDate: DateTime(2020),
+    lastDate: DateTime(2100),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -299,10 +318,7 @@ class _FactureEditPageState extends ConsumerState<FactureEditPage> {
               icon: const Icon(Icons.delete_outline),
               onPressed: _saving ? null : _delete,
             ),
-          AppBarSaveButton(
-            onPressed: _loading ? null : _save,
-            saving: _saving,
-          ),
+          AppBarSaveButton(onPressed: _loading ? null : _save, saving: _saving),
         ],
       ),
       body: _loading
@@ -360,7 +376,9 @@ class _FactureEditPageState extends ConsumerState<FactureEditPage> {
               children: [
                 Expanded(
                   child: DropdownButtonFormField<int>(
-                    key: ValueKey('client-$_clientId-${_clients.length}-$clientLocked'),
+                    key: ValueKey(
+                      'client-$_clientId-${_clients.length}-$clientLocked',
+                    ),
                     initialValue: _clientId,
                     isExpanded: true,
                     decoration: InputDecoration(
@@ -373,7 +391,7 @@ class _FactureEditPageState extends ConsumerState<FactureEditPage> {
                         DropdownMenuItem(
                           value: c.id,
                           child: Text(
-                            c.ville.isEmpty ? c.nom : '${c.nom} — ${c.ville}',
+                            tiersLabel(c),
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
@@ -448,7 +466,10 @@ class _FactureEditPageState extends ConsumerState<FactureEditPage> {
             Row(
               children: [
                 Expanded(
-                  child: Text(s.linkedBls, style: Theme.of(context).textTheme.titleSmall),
+                  child: Text(
+                    s.linkedBls,
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
                 ),
                 TextButton.icon(
                   onPressed: _pickBls,
@@ -467,7 +488,10 @@ class _FactureEditPageState extends ConsumerState<FactureEditPage> {
                 children: [
                   for (final bl in _bls)
                     InputChip(
-                      avatar: const Icon(Icons.local_shipping_outlined, size: 18),
+                      avatar: const Icon(
+                        Icons.local_shipping_outlined,
+                        size: 18,
+                      ),
                       label: Text(
                         '${bl.numero} · ${dateFormat.format(bl.date)} · ${formatMoney(bl.totalTtc)}',
                       ),
@@ -503,7 +527,8 @@ class _FactureEditPageState extends ConsumerState<FactureEditPage> {
                       (p.codeBarre?.toLowerCase().contains(t) ?? false),
                 );
               },
-              displayStringForOption: (p) => '${p.reference} — ${p.designation}',
+              displayStringForOption: (p) =>
+                  '${p.reference} — ${p.designation}',
               onSelected: _addProduct,
               fieldViewBuilder: (context, controller, focusNode, _) {
                 return TextField(
@@ -543,7 +568,9 @@ class _FactureEditPageState extends ConsumerState<FactureEditPage> {
                   labelText: s.fieldRemiseGlobale,
                   isDense: true,
                 ),
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
                 inputFormatters: [
                   FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
                 ],

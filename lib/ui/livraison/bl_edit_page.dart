@@ -13,6 +13,7 @@ import 'package:fes_distribution/ui/common/formatters.dart';
 import 'package:fes_distribution/ui/common/loading_view.dart';
 import 'package:fes_distribution/ui/common/new_tiers_dialog.dart';
 import 'package:fes_distribution/ui/common/paiement_dialog.dart';
+import 'package:fes_distribution/ui/common/tiers_label.dart';
 import 'package:fes_distribution/ui/l10n/strings_scope.dart';
 import 'package:fes_distribution/ui/common/document_lines_table.dart';
 import 'package:fes_distribution/ui/providers/service_providers.dart';
@@ -93,14 +94,19 @@ class _BlEditPageState extends ConsumerState<BlEditPage> {
         _clientId = clients.isNotEmpty ? clients.first.id : null;
         _vendeurId = vendeurs.isNotEmpty ? vendeurs.first.id : null;
       } else {
-        final doc = await ref.read(bonLivraisonServiceProvider).getById(widget.blId!);
+        final doc = await ref
+            .read(bonLivraisonServiceProvider)
+            .getById(widget.blId!);
         if (doc == null) throw StateError('Bon de livraison introuvable.');
         final bl = doc.bl;
         if (!clients.any((c) => c.id == bl.clientId)) {
-          final client = await ref.read(tiersServiceProvider).getById(bl.clientId);
+          final client = await ref
+              .read(tiersServiceProvider)
+              .getById(bl.clientId);
           if (client != null) clients.add(client);
         }
-        if (bl.vendeurId != null && !vendeurs.any((u) => u.id == bl.vendeurId)) {
+        if (bl.vendeurId != null &&
+            !vendeurs.any((u) => u.id == bl.vendeurId)) {
           final assigned = await users.getById(bl.vendeurId!);
           if (assigned != null) vendeurs.add(assigned);
         }
@@ -108,7 +114,9 @@ class _BlEditPageState extends ConsumerState<BlEditPage> {
         _date = bl.date;
         _dateEcheance = bl.dateEcheance;
         _clientId = bl.clientId;
-        _vendeurId = vendeurs.any((u) => u.id == bl.vendeurId) ? bl.vendeurId : null;
+        _vendeurId = vendeurs.any((u) => u.id == bl.vendeurId)
+            ? bl.vendeurId
+            : null;
         _remiseController.text = formatInput(bl.remiseGlobale);
         _factureNumero = doc.factureNumero;
         _noteController.text = bl.note;
@@ -138,8 +146,9 @@ class _BlEditPageState extends ConsumerState<BlEditPage> {
     if (cached != null) return cached;
     final user = await ref.read(userServiceProvider).getById(userId);
     if (user == null) return null;
-    final car =
-        await ref.read(stockLocationServiceProvider).getOrCreateVirtualForUser(user);
+    final car = await ref
+        .read(stockLocationServiceProvider)
+        .getOrCreateVirtualForUser(user);
     return _carByUser[userId] = car.id;
   }
 
@@ -149,8 +158,9 @@ class _BlEditPageState extends ConsumerState<BlEditPage> {
       _available = {};
       return;
     }
-    final stock =
-        await ref.read(stockBalanceServiceProvider).getAllStocksAtLocation(carId);
+    final stock = await ref
+        .read(stockBalanceServiceProvider)
+        .getAllStocksAtLocation(carId);
     if (_vendeurId == _savedVendeurId) {
       for (final e in _savedQty.entries) {
         stock[e.key] = (stock[e.key] ?? 0) + e.value;
@@ -194,9 +204,9 @@ class _BlEditPageState extends ConsumerState<BlEditPage> {
         ..sort((a, b) => a.nom.toLowerCase().compareTo(b.nom.toLowerCase()));
       _clientId = created.id;
     });
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('${s.newClient} : ${created.nom}')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('${s.newClient} : ${created.nom}')));
   }
 
   Future<void> _addPaiement() async {
@@ -208,7 +218,10 @@ class _BlEditPageState extends ConsumerState<BlEditPage> {
       await showErrorDialog(
         context,
         title: s.paiements,
-        message: s.errPaymentsExceed(formatMoney(total), formatMoney(_totals.totalTtc)),
+        message: s.errPaymentsExceed(
+          formatMoney(total),
+          formatMoney(_totals.totalTtc),
+        ),
       );
       return;
     }
@@ -244,15 +257,16 @@ class _BlEditPageState extends ConsumerState<BlEditPage> {
     setState(() => _saving = true);
     try {
       final carId = await _carLocationId(_vendeurId!);
-      final shortages =
-          await ref.read(stockMovementServiceProvider).getOutboundShortages(
-                fromLocationId: carId!,
-                desiredOutboundLines: _lines
-                    .where((l) => l.produitId > 0 && l.quantite > 0)
-                    .map((l) => (produitId: l.produitId, quantite: l.quantite)),
-                origineType: StockMovementService.origineTypeBonLivraison,
-                origineId: widget.blId,
-              );
+      final shortages = await ref
+          .read(stockMovementServiceProvider)
+          .getOutboundShortages(
+            fromLocationId: carId!,
+            desiredOutboundLines: _lines
+                .where((l) => l.produitId > 0 && l.quantite > 0)
+                .map((l) => (produitId: l.produitId, quantite: l.quantite)),
+            origineType: StockMovementService.origineTypeBonLivraison,
+            origineId: widget.blId,
+          );
       if (!mounted) return;
       if (shortages.isNotEmpty) {
         final ok = await showStockShortageDialog(
@@ -269,7 +283,9 @@ class _BlEditPageState extends ConsumerState<BlEditPage> {
         if (!ok) return;
       }
 
-      final id = await ref.read(bonLivraisonServiceProvider).save(
+      final id = await ref
+          .read(bonLivraisonServiceProvider)
+          .save(
             id: widget.blId,
             clientId: _clientId!,
             vendeurId: _vendeurId!,
@@ -281,7 +297,8 @@ class _BlEditPageState extends ConsumerState<BlEditPage> {
             paiements: _paiements,
           );
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(s.blSaved)));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(s.blSaved)));
       context.pop(id);
     } catch (e) {
       if (mounted) await showErrorDialog(context, title: title, message: '$e');
@@ -291,8 +308,9 @@ class _BlEditPageState extends ConsumerState<BlEditPage> {
   }
 
   Future<void> _invoice() async {
-    final factureId =
-        await context.push<int>('/ventes/factures/new?bl=${widget.blId}');
+    final factureId = await context.push<int>(
+      '/ventes/factures/new?bl=${widget.blId}',
+    );
     if (factureId != null && mounted) context.go('/ventes/factures');
   }
 
@@ -317,11 +335,11 @@ class _BlEditPageState extends ConsumerState<BlEditPage> {
   }
 
   Future<DateTime?> _pick(DateTime initial) => showDatePicker(
-        context: context,
-        initialDate: initial,
-        firstDate: DateTime(2020),
-        lastDate: DateTime(2100),
-      );
+    context: context,
+    initialDate: initial,
+    firstDate: DateTime(2020),
+    lastDate: DateTime(2100),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -360,7 +378,8 @@ class _BlEditPageState extends ConsumerState<BlEditPage> {
               children: [
                 if (_vendeurs.isEmpty) _banner(s.noActiveVendeur),
                 if (_clients.isEmpty) _banner(s.noClient),
-                if (_factureNumero != null) _banner(s.blInvoiced(_factureNumero!)),
+                if (_factureNumero != null)
+                  _banner(s.blInvoiced(_factureNumero!)),
                 _buildHeader(context),
                 const SizedBox(height: 16),
                 _buildAddProduct(context),
@@ -392,12 +411,9 @@ class _BlEditPageState extends ConsumerState<BlEditPage> {
   }
 
   Widget _banner(String text) => Card(
-        color: AppColors.brandSoft,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Text(text),
-        ),
-      );
+    color: AppColors.brandSoft,
+    child: Padding(padding: const EdgeInsets.all(16), child: Text(text)),
+  );
 
   Widget _buildHeader(BuildContext context) {
     final s = context.s;
@@ -409,7 +425,10 @@ class _BlEditPageState extends ConsumerState<BlEditPage> {
           children: [
             Row(
               children: [
-                const Icon(Icons.local_shipping_outlined, color: AppColors.brand),
+                const Icon(
+                  Icons.local_shipping_outlined,
+                  color: AppColors.brand,
+                ),
                 const SizedBox(width: 8),
                 Text(s.blFlow, style: Theme.of(context).textTheme.titleSmall),
               ],
@@ -431,7 +450,7 @@ class _BlEditPageState extends ConsumerState<BlEditPage> {
                         DropdownMenuItem(
                           value: c.id,
                           child: Text(
-                            c.ville.isEmpty ? c.nom : '${c.nom} — ${c.ville}',
+                            tiersLabel(c),
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
@@ -458,7 +477,13 @@ class _BlEditPageState extends ConsumerState<BlEditPage> {
               ),
               items: [
                 for (final u in _vendeurs)
-                  DropdownMenuItem(value: u.id, child: Text(u.fullName)),
+                  DropdownMenuItem(
+                    value: u.id,
+                    child: Text(
+                      vendeurLabel(u),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
               ],
               onChanged: (v) {
                 if (v != null) _onVendeurChanged(v);
@@ -557,7 +582,9 @@ class _BlEditPageState extends ConsumerState<BlEditPage> {
                   labelText: s.fieldRemiseGlobale,
                   isDense: true,
                 ),
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
                 inputFormatters: [
                   FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
                 ],
@@ -603,7 +630,10 @@ class _BlEditPageState extends ConsumerState<BlEditPage> {
             Row(
               children: [
                 Expanded(
-                  child: Text(s.paiements, style: Theme.of(context).textTheme.titleSmall),
+                  child: Text(
+                    s.paiements,
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
                 ),
                 TextButton.icon(
                   onPressed: _addPaiement,
@@ -615,7 +645,10 @@ class _BlEditPageState extends ConsumerState<BlEditPage> {
             if (_paiements.isEmpty)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8),
-                child: Text(s.noPaiement, style: TextStyle(color: AppColors.muted)),
+                child: Text(
+                  s.noPaiement,
+                  style: TextStyle(color: AppColors.muted),
+                ),
               )
             else
               for (var i = 0; i < _paiements.length; i++)
@@ -627,7 +660,8 @@ class _BlEditPageState extends ConsumerState<BlEditPage> {
                     [
                       dateFormat.format(_paiements[i].date),
                       _paiements[i].mode.label(s),
-                      if (_paiements[i].reference.isNotEmpty) _paiements[i].reference,
+                      if (_paiements[i].reference.isNotEmpty)
+                        _paiements[i].reference,
                     ].join(' · '),
                   ),
                   trailing: IconButton(

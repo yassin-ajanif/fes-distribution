@@ -73,7 +73,9 @@ void main() {
     balances = SupplierBalanceService(db);
 
     final now = DateTime.now().toUtc();
-    productId = await db.into(db.produits).insert(
+    productId = await db
+        .into(db.produits)
+        .insert(
           ProduitsCompanion.insert(
             reference: 'P-SOLDE',
             designation: 'Peinture',
@@ -89,8 +91,10 @@ void main() {
   });
 
   test('balance is BR totals minus payments, biggest debt first', () async {
-    final a = await TiersService(db).createFournisseur(nom: 'Fournisseur A');
-    final b = await TiersService(db).createFournisseur(nom: 'Fournisseur B');
+    final a = await TiersService(db)
+        .createFournisseur(nom: 'Fournisseur A', telephone: '0601000001');
+    final b = await TiersService(db)
+        .createFournisseur(nom: 'Fournisseur B', telephone: '0601000002');
     await brs.save(
       fournisseurId: a.id,
       date: DateTime.now(),
@@ -100,7 +104,10 @@ void main() {
     await newBr(b.id, 3); // 300 DH
 
     final list = await balances.list();
-    expect(list.map((r) => r.fournisseurNom), ['Fournisseur A', 'Fournisseur B']);
+    expect(list.map((r) => r.fournisseurNom), [
+      'Fournisseur A',
+      'Fournisseur B',
+    ]);
     expect(list.first.solde, 600);
     expect(list.first.totalLivraison, 1000);
     expect(list.first.totalPaye, 400);
@@ -110,7 +117,8 @@ void main() {
   });
 
   test('invoicing a BR does not change the balance', () async {
-    final a = await TiersService(db).createFournisseur(nom: 'Alpha');
+    final a = await TiersService(db)
+        .createFournisseur(nom: 'Alpha', telephone: '0601000003');
     final brId = await newBr(a.id, 10); // 1 000 DH
     final before = await rowOf(a.id);
 
@@ -126,7 +134,8 @@ void main() {
   });
 
   test('a BR with no facture is still owed', () async {
-    final a = await TiersService(db).createFournisseur(nom: 'Beta');
+    final a = await TiersService(db)
+        .createFournisseur(nom: 'Beta', telephone: '0601000004');
     await newBr(a.id, 4); // 400 DH, not invoiced yet
 
     final row = await rowOf(a.id);
@@ -136,7 +145,8 @@ void main() {
   });
 
   test('settling the BR clears the supplier from the default list', () async {
-    final a = await TiersService(db).createFournisseur(nom: 'Gamma');
+    final a = await TiersService(db)
+        .createFournisseur(nom: 'Gamma', telephone: '0601000005');
     await brs.save(
       fournisseurId: a.id,
       date: DateTime.now(),
@@ -151,7 +161,8 @@ void main() {
   });
 
   test('TVA counts in the debt and credit notes reduce it', () async {
-    final a = await TiersService(db).createFournisseur(nom: 'Delta');
+    final a = await TiersService(db)
+        .createFournisseur(nom: 'Delta', telephone: '0601000006');
     await brs.save(
       fournisseurId: a.id,
       date: DateTime.now(),
@@ -174,7 +185,8 @@ void main() {
   });
 
   test('details list BRs with their payments and invoice info', () async {
-    final a = await TiersService(db).createFournisseur(nom: 'Epsilon');
+    final a = await TiersService(db)
+        .createFournisseur(nom: 'Epsilon', telephone: '0601000007');
     final br1 = await brs.save(
       fournisseurId: a.id,
       date: DateTime.now(),
@@ -200,22 +212,26 @@ void main() {
     expect(unpaid.factureNumero, isNull);
   });
 
-  test('search narrows the list and the all-toggle shows settled suppliers',
-      () async {
-    final a = await TiersService(db).createFournisseur(nom: 'Zeta');
-    final b = await TiersService(db).createFournisseur(nom: 'Eta');
-    await newBr(a.id, 5); // 500 DH, still owed
-    await brs.save(
-      fournisseurId: b.id,
-      date: DateTime.now(),
-      lines: [line(1)],
-      paiements: [DocumentPaiement(date: DateTime.now(), montant: 100)],
-    );
+  test(
+    'search narrows the list and the all-toggle shows settled suppliers',
+    () async {
+      final a = await TiersService(db)
+          .createFournisseur(nom: 'Zeta', telephone: '0601000008');
+      final b = await TiersService(db)
+          .createFournisseur(nom: 'Eta', telephone: '0601000009');
+      await newBr(a.id, 5); // 500 DH, still owed
+      await brs.save(
+        fournisseurId: b.id,
+        date: DateTime.now(),
+        lines: [line(1)],
+        paiements: [DocumentPaiement(date: DateTime.now(), montant: 100)],
+      );
 
-    expect((await balances.list(search: 'zet')).single.fournisseurId, a.id);
-    expect(await balances.list(search: 'zzz'), isEmpty);
+      expect((await balances.list(search: 'zet')).single.fournisseurId, a.id);
+      expect(await balances.list(search: 'zzz'), isEmpty);
 
-    final all = await balances.list(uniquementAvecSolde: false);
-    expect(all.map((r) => r.solde), [500, 0]);
-  });
+      final all = await balances.list(uniquementAvecSolde: false);
+      expect(all.map((r) => r.solde), [500, 0]);
+    },
+  );
 }

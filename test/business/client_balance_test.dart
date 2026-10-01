@@ -35,8 +35,10 @@ void main() {
 
   /// A vendeur whose car is stocked, so a BL can actually be created.
   Future<int> vendeurAvecStock(String name, double qty) async {
-    final vendeur = await UserService(db, locations)
-        .createVendeur(fullName: name, phone: '0600${name.hashCode % 1000000}');
+    final vendeur = await UserService(
+      db,
+      locations,
+    ).createVendeur(fullName: name, phone: '0600${name.hashCode % 1000000}');
     await BonChargeService(db, numbers, locations, stock).save(
       assignedToUserId: vendeur.id,
       depotLocationId: 1,
@@ -57,7 +59,9 @@ void main() {
     balances = ClientBalanceService(db);
 
     final now = DateTime.now().toUtc();
-    productId = await db.into(db.produits).insert(
+    productId = await db
+        .into(db.produits)
+        .insert(
           ProduitsCompanion.insert(
             reference: 'P-BAL',
             designation: 'Peinture',
@@ -66,7 +70,9 @@ void main() {
             updatedAt: now,
           ),
         );
-    await db.into(db.mouvementsStock).insert(
+    await db
+        .into(db.mouvementsStock)
+        .insert(
           MouvementsStockCompanion.insert(
             produitId: productId,
             toLocationId: const Value(1),
@@ -84,7 +90,8 @@ void main() {
   });
 
   test('balance is BL totals minus payments, biggest debt first', () async {
-    final client = await TiersService(db).createClient(nom: 'Alpha');
+    final client = await TiersService(db)
+        .createClient(nom: 'Alpha', telephone: '0601000001');
     final vendeurId = await vendeurAvecStock('Ahmed', 100);
 
     await bls.save(
@@ -93,9 +100,7 @@ void main() {
       date: DateTime.now(),
       dateEcheance: DateTime.now().add(const Duration(days: 30)),
       lines: [line(5, ht: 200, tva: 0)], // 1 000 DH HT, no TVA
-      paiements: [
-        DocumentPaiement(date: DateTime.now(), montant: 400),
-      ],
+      paiements: [DocumentPaiement(date: DateTime.now(), montant: 400)],
     );
 
     final row = (await balances.list()).single;
@@ -109,7 +114,8 @@ void main() {
   });
 
   test('settling the BL clears the client from the default list', () async {
-    final client = await TiersService(db).createClient(nom: 'Beta');
+    final client = await TiersService(db)
+        .createClient(nom: 'Beta', telephone: '0601000002');
     final vendeurId = await vendeurAvecStock('Ali', 100);
 
     await bls.save(
@@ -118,9 +124,7 @@ void main() {
       date: DateTime.now(),
       dateEcheance: DateTime.now().add(const Duration(days: 30)),
       lines: [line(2, ht: 1000, tva: 0)], // 2 000 DH
-      paiements: [
-        DocumentPaiement(date: DateTime.now(), montant: 2000),
-      ],
+      paiements: [DocumentPaiement(date: DateTime.now(), montant: 2000)],
     );
 
     // The seeded default client owes nothing, so the debt list stays empty.
@@ -132,7 +136,8 @@ void main() {
   });
 
   test('TVA is part of the total the client owes', () async {
-    final client = await TiersService(db).createClient(nom: 'Gamma');
+    final client = await TiersService(db)
+        .createClient(nom: 'Gamma', telephone: '0601000003');
     final vendeurId = await vendeurAvecStock('Sara', 100);
 
     await bls.save(
@@ -141,9 +146,7 @@ void main() {
       date: DateTime.now(),
       dateEcheance: DateTime.now().add(const Duration(days: 30)),
       lines: [line(1, ht: 500, tva: 20)], // 600 TTC
-      paiements: [
-        DocumentPaiement(date: DateTime.now(), montant: 100),
-      ],
+      paiements: [DocumentPaiement(date: DateTime.now(), montant: 100)],
     );
 
     final row = (await balances.list()).single;
@@ -152,7 +155,8 @@ void main() {
   });
 
   test('blDetails lists each BL with what was paid on it', () async {
-    final client = await TiersService(db).createClient(nom: 'Delta');
+    final client = await TiersService(db)
+        .createClient(nom: 'Delta', telephone: '0601000004');
     final vendeurId = await vendeurAvecStock('Nabil', 100);
 
     final first = await bls.save(
@@ -161,9 +165,7 @@ void main() {
       date: DateTime.now().subtract(const Duration(days: 2)),
       dateEcheance: DateTime.now().add(const Duration(days: 30)),
       lines: [line(1, ht: 300, tva: 0)],
-      paiements: [
-        DocumentPaiement(date: DateTime.now(), montant: 100),
-      ],
+      paiements: [DocumentPaiement(date: DateTime.now(), montant: 100)],
     );
     final second = await bls.save(
       clientId: client.id,
@@ -188,11 +190,12 @@ void main() {
     expect(older.reste, 200);
   });
 
-  test('search filters on the client name and debts sort descending',
-      () async {
+  test('search filters on the client name and debts sort descending', () async {
     final vendeurId = await vendeurAvecStock('Karim', 100);
-    final petit = await TiersService(db).createClient(nom: 'Petit');
-    final gros = await TiersService(db).createClient(nom: 'Grosalpha');
+    final petit = await TiersService(db)
+        .createClient(nom: 'Petit', telephone: '0601000005');
+    final gros = await TiersService(db)
+        .createClient(nom: 'Grosalpha', telephone: '0601000006');
 
     for (final entry in {gros: 20.0, petit: 2.0}.entries) {
       await bls.save(
@@ -213,7 +216,8 @@ void main() {
   });
 
   test('a supplier is never part of the client balances', () async {
-    await TiersService(db).createFournisseur(nom: 'Fournisseur X');
+    await TiersService(db)
+        .createFournisseur(nom: 'Fournisseur X', telephone: '0601000007');
     final all = await balances.list(uniquementAvecSolde: false);
     expect(all.map((b) => b.clientNom), isNot(contains('Fournisseur X')));
   });

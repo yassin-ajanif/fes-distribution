@@ -64,9 +64,9 @@ class TiersService {
   }
 
   Future<List<Tier>> _listActive(List<int> types) async {
-    final rows = await (_db.select(_db.tiers)
-          ..where((t) => t.actif.equals(true) & t.type.isIn(types)))
-        .get();
+    final rows = await (_db.select(
+      _db.tiers,
+    )..where((t) => t.actif.equals(true) & t.type.isIn(types))).get();
     rows.sort((a, b) => a.nom.toLowerCase().compareTo(b.nom.toLowerCase()));
     return rows;
   }
@@ -80,15 +80,20 @@ class TiersService {
     required String ice,
     int? createdByUserId,
   }) async {
+    final phone = _requirePhone(telephone);
+    await _ensurePhoneFree(phone);
+
     final now = DateTime.now().toUtc();
-    final id = await _db.into(_db.tiers).insert(
+    final id = await _db
+        .into(_db.tiers)
+        .insert(
           TiersCompanion.insert(
             type: type,
             nom: nom.trim(),
             ice: ice.trim(),
             adresse: adresse.trim(),
             ville: ville.trim(),
-            telephone: telephone.trim(),
+            telephone: phone,
             email: '',
             conditionsPaiement: '',
             createdAt: now,
@@ -97,5 +102,31 @@ class TiersService {
           ),
         );
     return (await getById(id))!;
+  }
+
+  /// The phone is what tells two same-named tiers apart, so it is required —
+  /// and unique, exactly like a vendeur's.
+  String _requirePhone(String phone) {
+    final trimmed = phone.trim();
+    if (trimmed.isEmpty) {
+      throw StateError('Le téléphone est obligatoire.');
+    }
+    return trimmed;
+  }
+
+  /// Unique across every tier, whatever its type: one phone means one
+  /// counterparty. Someone who is both a client and a supplier is a `LesDeux`
+  /// tier, not two rows sharing a number.
+  Future<void> _ensurePhoneFree(String phone) async {
+    final clash =
+        await (_db.select(_db.tiers)
+              ..where((t) => t.telephone.equals(phone))
+              ..limit(1))
+            .getSingleOrNull();
+    if (clash == null) return;
+    throw StateError(
+      'Le numéro $phone est déjà utilisé par « ${clash.nom} ». '
+      'Sélectionnez ce compte au lieu d\'en créer un second.',
+    );
   }
 }

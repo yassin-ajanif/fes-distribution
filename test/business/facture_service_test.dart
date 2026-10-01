@@ -25,20 +25,20 @@ void main() {
   late int carId;
 
   DocumentLine line(double qty) => DocumentLine(
-        produitId: productId,
-        designation: 'Peinture',
-        quantite: qty,
-        prixUnitaireHt: 100,
-        tauxTva: 20,
-      );
+    produitId: productId,
+    designation: 'Peinture',
+    quantite: qty,
+    prixUnitaireHt: 100,
+    tauxTva: 20,
+  );
 
   Future<int> newBl(int clientId, double qty) => bls.save(
-        clientId: clientId,
-        vendeurId: vendeurId,
-        date: DateTime.now(),
-        dateEcheance: DateTime.now(),
-        lines: [line(qty)],
-      );
+    clientId: clientId,
+    vendeurId: vendeurId,
+    date: DateTime.now(),
+    dateEcheance: DateTime.now(),
+    lines: [line(qty)],
+  );
 
   setUp(() async {
     db = AppDatabase(NativeDatabase.memory());
@@ -51,7 +51,9 @@ void main() {
     factures = FactureService(db, numbers);
 
     final now = DateTime.now().toUtc();
-    productId = await db.into(db.produits).insert(
+    productId = await db
+        .into(db.produits)
+        .insert(
           ProduitsCompanion.insert(
             reference: 'P-FAC',
             designation: 'Peinture',
@@ -60,7 +62,9 @@ void main() {
             updatedAt: now,
           ),
         );
-    await db.into(db.mouvementsStock).insert(
+    await db
+        .into(db.mouvementsStock)
+        .insert(
           MouvementsStockCompanion.insert(
             produitId: productId,
             toLocationId: const Value(1),
@@ -71,8 +75,10 @@ void main() {
             updatedAt: now,
           ),
         );
-    final vendeur = await UserService(db, locations)
-        .createVendeur(fullName: 'V', phone: '0600000009');
+    final vendeur = await UserService(
+      db,
+      locations,
+    ).createVendeur(fullName: 'V', phone: '0600000009');
     vendeurId = vendeur.id;
     carId = (await locations.getOrCreateVirtualForUser(vendeur)).id;
     await BonChargeService(db, numbers, locations, stock).save(
@@ -83,8 +89,8 @@ void main() {
       lines: [line(50)],
     );
     final tiers = TiersService(db);
-    clientA = (await tiers.createClient(nom: 'A')).id;
-    clientB = (await tiers.createClient(nom: 'B')).id;
+    clientA = (await tiers.createClient(nom: 'A', telephone: '0601000001')).id;
+    clientB = (await tiers.createClient(nom: 'B', telephone: '0601000002')).id;
   });
 
   tearDown(() async {

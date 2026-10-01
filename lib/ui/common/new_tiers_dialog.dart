@@ -7,9 +7,9 @@ import 'package:fes_distribution/ui/providers/service_providers.dart';
 
 /// Quick client creation from a sales document. Pops the created [Tier].
 Future<Tier?> showNewClientDialog(BuildContext context) => showDialog<Tier>(
-      context: context,
-      builder: (_) => const _NewTiersDialog(fournisseur: false),
-    );
+  context: context,
+  builder: (_) => const _NewTiersDialog(fournisseur: false),
+);
 
 /// Quick supplier creation from a purchase document. Pops the created [Tier].
 Future<Tier?> showNewFournisseurDialog(BuildContext context) =>
@@ -93,6 +93,9 @@ class _NewTiersDialogState extends ConsumerState<_NewTiersDialog> {
               controller: _telephone,
               decoration: InputDecoration(labelText: s.fieldTelephone),
               keyboardType: TextInputType.phone,
+              // Required: it is what tells two same-named tiers apart.
+              validator: (v) =>
+                  (v == null || v.trim().isEmpty) ? s.requiredField : null,
             ),
             const SizedBox(height: 12),
             TextFormField(

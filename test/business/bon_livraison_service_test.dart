@@ -25,16 +25,18 @@ void main() {
   late int clientId;
 
   DocumentLine line(double qty) => DocumentLine(
-        produitId: productId,
-        designation: 'Peinture blanche',
-        quantite: qty,
-        prixUnitaireHt: 100,
-        tauxTva: 20,
-      );
+    produitId: productId,
+    designation: 'Peinture blanche',
+    quantite: qty,
+    prixUnitaireHt: 100,
+    tauxTva: 20,
+  );
 
   Future<User> vendeurWithCar(String name, String phone, double qty) async {
-    final vendeur = await UserService(db, locations)
-        .createVendeur(fullName: name, phone: phone);
+    final vendeur = await UserService(
+      db,
+      locations,
+    ).createVendeur(fullName: name, phone: phone);
     await BonChargeService(db, numbers, locations, stock).save(
       assignedToUserId: vendeur.id,
       depotLocationId: 1,
@@ -55,7 +57,9 @@ void main() {
     service = BonLivraisonService(db, numbers, locations, stock);
 
     final now = DateTime.now().toUtc();
-    productId = await db.into(db.produits).insert(
+    productId = await db
+        .into(db.produits)
+        .insert(
           ProduitsCompanion.insert(
             reference: 'P-BL',
             designation: 'Peinture blanche',
@@ -64,7 +68,9 @@ void main() {
             updatedAt: now,
           ),
         );
-    await db.into(db.mouvementsStock).insert(
+    await db
+        .into(db.mouvementsStock)
+        .insert(
           MouvementsStockCompanion.insert(
             produitId: productId,
             toLocationId: const Value(1),
@@ -75,47 +81,51 @@ void main() {
             updatedAt: now,
           ),
         );
-    clientId = (await TiersService(db).createClient(nom: 'Client A')).id;
+    clientId = (await TiersService(
+      db,
+    ).createClient(nom: 'Client A', telephone: '0601000001')).id;
   });
 
   tearDown(() async {
     await db.close();
   });
 
-  test('BL takes goods from the vendeur car, edit and delete resync it',
-      () async {
-    final vendeur = await vendeurWithCar('Ahmed', '0600000001', 20);
-    final car = await locations.getOrCreateVirtualForUser(vendeur);
-    expect(await balance.getStock(productId, car.id), 20);
+  test(
+    'BL takes goods from the vendeur car, edit and delete resync it',
+    () async {
+      final vendeur = await vendeurWithCar('Ahmed', '0600000001', 20);
+      final car = await locations.getOrCreateVirtualForUser(vendeur);
+      expect(await balance.getStock(productId, car.id), 20);
 
-    final id = await service.save(
-      clientId: clientId,
-      vendeurId: vendeur.id,
-      date: DateTime.now(),
-      dateEcheance: DateTime.now().add(const Duration(days: 30)),
-      lines: [line(6)],
-    );
-    expect(await balance.getStock(productId, car.id), 14);
-    expect(await balance.getStock(productId, 1), 80);
+      final id = await service.save(
+        clientId: clientId,
+        vendeurId: vendeur.id,
+        date: DateTime.now(),
+        dateEcheance: DateTime.now().add(const Duration(days: 30)),
+        lines: [line(6)],
+      );
+      expect(await balance.getStock(productId, car.id), 14);
+      expect(await balance.getStock(productId, 1), 80);
 
-    final saved = await service.getById(id);
-    expect(saved!.bl.numero, startsWith('BL-'));
-    expect(saved.bl.totalTtc, closeTo(720, 0.001));
+      final saved = await service.getById(id);
+      expect(saved!.bl.numero, startsWith('BL-'));
+      expect(saved.bl.totalTtc, closeTo(720, 0.001));
 
-    await service.save(
-      id: id,
-      clientId: clientId,
-      vendeurId: vendeur.id,
-      date: DateTime.now(),
-      dateEcheance: DateTime.now(),
-      lines: [line(4)],
-    );
-    expect(await balance.getStock(productId, car.id), 16);
+      await service.save(
+        id: id,
+        clientId: clientId,
+        vendeurId: vendeur.id,
+        date: DateTime.now(),
+        dateEcheance: DateTime.now(),
+        lines: [line(4)],
+      );
+      expect(await balance.getStock(productId, car.id), 16);
 
-    await service.delete(id);
-    expect(await balance.getStock(productId, car.id), 20);
-    expect(await service.list(), isEmpty);
-  });
+      await service.delete(id);
+      expect(await balance.getStock(productId, car.id), 20);
+      expect(await service.list(), isEmpty);
+    },
+  );
 
   test('changing the vendeur returns goods to the old car', () async {
     final a = await vendeurWithCar('A', '0600000002', 10);
@@ -156,11 +166,7 @@ void main() {
       lines: [line(1)],
       paiements: [
         DocumentPaiement(date: today, montant: 100),
-        DocumentPaiement(
-          date: today,
-          montant: 20,
-          mode: ModePaiement.credit,
-        ),
+        DocumentPaiement(date: today, montant: 20, mode: ModePaiement.credit),
       ],
     );
     var saved = await service.getById(id);
