@@ -12707,6 +12707,21 @@ class $BonsReceptionTable extends BonsReception
     type: DriftSqlType.dateTime,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _estPayeeMeta = const VerificationMeta(
+    'estPayee',
+  );
+  @override
+  late final GeneratedColumn<bool> estPayee = GeneratedColumn<bool>(
+    'est_payee',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("est_payee" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   static const VerificationMeta _totalTtcMeta = const VerificationMeta(
     'totalTtc',
   );
@@ -12770,6 +12785,7 @@ class $BonsReceptionTable extends BonsReception
     bonCommandeId,
     factureFournisseurId,
     date,
+    estPayee,
     totalTtc,
     note,
     createdAt,
@@ -12835,6 +12851,12 @@ class $BonsReceptionTable extends BonsReception
       );
     } else if (isInserting) {
       context.missing(_dateMeta);
+    }
+    if (data.containsKey('est_payee')) {
+      context.handle(
+        _estPayeeMeta,
+        estPayee.isAcceptableOrUnknown(data['est_payee']!, _estPayeeMeta),
+      );
     }
     if (data.containsKey('total_ttc')) {
       context.handle(
@@ -12906,6 +12928,10 @@ class $BonsReceptionTable extends BonsReception
         DriftSqlType.dateTime,
         data['${effectivePrefix}date'],
       )!,
+      estPayee: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}est_payee'],
+      )!,
       totalTtc: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}total_ttc'],
@@ -12943,6 +12969,9 @@ class BonsReceptionData extends DataClass
   final int? bonCommandeId;
   final int? factureFournisseurId;
   final DateTime date;
+
+  /// Derived from the payments recorded on the BR, like `BonsLivraison.estPayee`.
+  final bool estPayee;
   final double totalTtc;
   final String note;
   final DateTime createdAt;
@@ -12955,6 +12984,7 @@ class BonsReceptionData extends DataClass
     this.bonCommandeId,
     this.factureFournisseurId,
     required this.date,
+    required this.estPayee,
     required this.totalTtc,
     required this.note,
     required this.createdAt,
@@ -12974,6 +13004,7 @@ class BonsReceptionData extends DataClass
       map['facture_fournisseur_id'] = Variable<int>(factureFournisseurId);
     }
     map['date'] = Variable<DateTime>(date);
+    map['est_payee'] = Variable<bool>(estPayee);
     map['total_ttc'] = Variable<double>(totalTtc);
     map['note'] = Variable<String>(note);
     map['created_at'] = Variable<DateTime>(createdAt);
@@ -12996,6 +13027,7 @@ class BonsReceptionData extends DataClass
           ? const Value.absent()
           : Value(factureFournisseurId),
       date: Value(date),
+      estPayee: Value(estPayee),
       totalTtc: Value(totalTtc),
       note: Value(note),
       createdAt: Value(createdAt),
@@ -13020,6 +13052,7 @@ class BonsReceptionData extends DataClass
         json['factureFournisseurId'],
       ),
       date: serializer.fromJson<DateTime>(json['date']),
+      estPayee: serializer.fromJson<bool>(json['estPayee']),
       totalTtc: serializer.fromJson<double>(json['totalTtc']),
       note: serializer.fromJson<String>(json['note']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
@@ -13037,6 +13070,7 @@ class BonsReceptionData extends DataClass
       'bonCommandeId': serializer.toJson<int?>(bonCommandeId),
       'factureFournisseurId': serializer.toJson<int?>(factureFournisseurId),
       'date': serializer.toJson<DateTime>(date),
+      'estPayee': serializer.toJson<bool>(estPayee),
       'totalTtc': serializer.toJson<double>(totalTtc),
       'note': serializer.toJson<String>(note),
       'createdAt': serializer.toJson<DateTime>(createdAt),
@@ -13052,6 +13086,7 @@ class BonsReceptionData extends DataClass
     Value<int?> bonCommandeId = const Value.absent(),
     Value<int?> factureFournisseurId = const Value.absent(),
     DateTime? date,
+    bool? estPayee,
     double? totalTtc,
     String? note,
     DateTime? createdAt,
@@ -13068,6 +13103,7 @@ class BonsReceptionData extends DataClass
         ? factureFournisseurId.value
         : this.factureFournisseurId,
     date: date ?? this.date,
+    estPayee: estPayee ?? this.estPayee,
     totalTtc: totalTtc ?? this.totalTtc,
     note: note ?? this.note,
     createdAt: createdAt ?? this.createdAt,
@@ -13090,6 +13126,7 @@ class BonsReceptionData extends DataClass
           ? data.factureFournisseurId.value
           : this.factureFournisseurId,
       date: data.date.present ? data.date.value : this.date,
+      estPayee: data.estPayee.present ? data.estPayee.value : this.estPayee,
       totalTtc: data.totalTtc.present ? data.totalTtc.value : this.totalTtc,
       note: data.note.present ? data.note.value : this.note,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
@@ -13109,6 +13146,7 @@ class BonsReceptionData extends DataClass
           ..write('bonCommandeId: $bonCommandeId, ')
           ..write('factureFournisseurId: $factureFournisseurId, ')
           ..write('date: $date, ')
+          ..write('estPayee: $estPayee, ')
           ..write('totalTtc: $totalTtc, ')
           ..write('note: $note, ')
           ..write('createdAt: $createdAt, ')
@@ -13126,6 +13164,7 @@ class BonsReceptionData extends DataClass
     bonCommandeId,
     factureFournisseurId,
     date,
+    estPayee,
     totalTtc,
     note,
     createdAt,
@@ -13142,6 +13181,7 @@ class BonsReceptionData extends DataClass
           other.bonCommandeId == this.bonCommandeId &&
           other.factureFournisseurId == this.factureFournisseurId &&
           other.date == this.date &&
+          other.estPayee == this.estPayee &&
           other.totalTtc == this.totalTtc &&
           other.note == this.note &&
           other.createdAt == this.createdAt &&
@@ -13156,6 +13196,7 @@ class BonsReceptionCompanion extends UpdateCompanion<BonsReceptionData> {
   final Value<int?> bonCommandeId;
   final Value<int?> factureFournisseurId;
   final Value<DateTime> date;
+  final Value<bool> estPayee;
   final Value<double> totalTtc;
   final Value<String> note;
   final Value<DateTime> createdAt;
@@ -13168,6 +13209,7 @@ class BonsReceptionCompanion extends UpdateCompanion<BonsReceptionData> {
     this.bonCommandeId = const Value.absent(),
     this.factureFournisseurId = const Value.absent(),
     this.date = const Value.absent(),
+    this.estPayee = const Value.absent(),
     this.totalTtc = const Value.absent(),
     this.note = const Value.absent(),
     this.createdAt = const Value.absent(),
@@ -13181,6 +13223,7 @@ class BonsReceptionCompanion extends UpdateCompanion<BonsReceptionData> {
     this.bonCommandeId = const Value.absent(),
     this.factureFournisseurId = const Value.absent(),
     required DateTime date,
+    this.estPayee = const Value.absent(),
     this.totalTtc = const Value.absent(),
     this.note = const Value.absent(),
     required DateTime createdAt,
@@ -13198,6 +13241,7 @@ class BonsReceptionCompanion extends UpdateCompanion<BonsReceptionData> {
     Expression<int>? bonCommandeId,
     Expression<int>? factureFournisseurId,
     Expression<DateTime>? date,
+    Expression<bool>? estPayee,
     Expression<double>? totalTtc,
     Expression<String>? note,
     Expression<DateTime>? createdAt,
@@ -13212,6 +13256,7 @@ class BonsReceptionCompanion extends UpdateCompanion<BonsReceptionData> {
       if (factureFournisseurId != null)
         'facture_fournisseur_id': factureFournisseurId,
       if (date != null) 'date': date,
+      if (estPayee != null) 'est_payee': estPayee,
       if (totalTtc != null) 'total_ttc': totalTtc,
       if (note != null) 'note': note,
       if (createdAt != null) 'created_at': createdAt,
@@ -13227,6 +13272,7 @@ class BonsReceptionCompanion extends UpdateCompanion<BonsReceptionData> {
     Value<int?>? bonCommandeId,
     Value<int?>? factureFournisseurId,
     Value<DateTime>? date,
+    Value<bool>? estPayee,
     Value<double>? totalTtc,
     Value<String>? note,
     Value<DateTime>? createdAt,
@@ -13240,6 +13286,7 @@ class BonsReceptionCompanion extends UpdateCompanion<BonsReceptionData> {
       bonCommandeId: bonCommandeId ?? this.bonCommandeId,
       factureFournisseurId: factureFournisseurId ?? this.factureFournisseurId,
       date: date ?? this.date,
+      estPayee: estPayee ?? this.estPayee,
       totalTtc: totalTtc ?? this.totalTtc,
       note: note ?? this.note,
       createdAt: createdAt ?? this.createdAt,
@@ -13269,6 +13316,9 @@ class BonsReceptionCompanion extends UpdateCompanion<BonsReceptionData> {
     if (date.present) {
       map['date'] = Variable<DateTime>(date.value);
     }
+    if (estPayee.present) {
+      map['est_payee'] = Variable<bool>(estPayee.value);
+    }
     if (totalTtc.present) {
       map['total_ttc'] = Variable<double>(totalTtc.value);
     }
@@ -13296,6 +13346,7 @@ class BonsReceptionCompanion extends UpdateCompanion<BonsReceptionData> {
           ..write('bonCommandeId: $bonCommandeId, ')
           ..write('factureFournisseurId: $factureFournisseurId, ')
           ..write('date: $date, ')
+          ..write('estPayee: $estPayee, ')
           ..write('totalTtc: $totalTtc, ')
           ..write('note: $note, ')
           ..write('createdAt: $createdAt, ')
@@ -15430,11 +15481,12 @@ class $PaiementsFournisseursTable extends PaiementsFournisseurs
       'PRIMARY KEY AUTOINCREMENT',
     ),
   );
-  static const VerificationMeta _factureFournisseurIdMeta =
-      const VerificationMeta('factureFournisseurId');
+  static const VerificationMeta _bonReceptionIdMeta = const VerificationMeta(
+    'bonReceptionId',
+  );
   @override
-  late final GeneratedColumn<int> factureFournisseurId = GeneratedColumn<int>(
-    'facture_fournisseur_id',
+  late final GeneratedColumn<int> bonReceptionId = GeneratedColumn<int>(
+    'bon_reception_id',
     aliasedName,
     false,
     type: DriftSqlType.int,
@@ -15518,7 +15570,7 @@ class $PaiementsFournisseursTable extends PaiementsFournisseurs
   @override
   List<GeneratedColumn> get $columns => [
     id,
-    factureFournisseurId,
+    bonReceptionId,
     date,
     montant,
     mode,
@@ -15542,16 +15594,16 @@ class $PaiementsFournisseursTable extends PaiementsFournisseurs
     if (data.containsKey('id')) {
       context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
     }
-    if (data.containsKey('facture_fournisseur_id')) {
+    if (data.containsKey('bon_reception_id')) {
       context.handle(
-        _factureFournisseurIdMeta,
-        factureFournisseurId.isAcceptableOrUnknown(
-          data['facture_fournisseur_id']!,
-          _factureFournisseurIdMeta,
+        _bonReceptionIdMeta,
+        bonReceptionId.isAcceptableOrUnknown(
+          data['bon_reception_id']!,
+          _bonReceptionIdMeta,
         ),
       );
     } else if (isInserting) {
-      context.missing(_factureFournisseurIdMeta);
+      context.missing(_bonReceptionIdMeta);
     }
     if (data.containsKey('date')) {
       context.handle(
@@ -15619,9 +15671,9 @@ class $PaiementsFournisseursTable extends PaiementsFournisseurs
         DriftSqlType.int,
         data['${effectivePrefix}id'],
       )!,
-      factureFournisseurId: attachedDatabase.typeMapping.read(
+      bonReceptionId: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
-        data['${effectivePrefix}facture_fournisseur_id'],
+        data['${effectivePrefix}bon_reception_id'],
       )!,
       date: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
@@ -15663,7 +15715,7 @@ class $PaiementsFournisseursTable extends PaiementsFournisseurs
 class PaiementsFournisseur extends DataClass
     implements Insertable<PaiementsFournisseur> {
   final int id;
-  final int factureFournisseurId;
+  final int bonReceptionId;
   final DateTime date;
   final double montant;
   final int mode;
@@ -15673,7 +15725,7 @@ class PaiementsFournisseur extends DataClass
   final int? createdByUserId;
   const PaiementsFournisseur({
     required this.id,
-    required this.factureFournisseurId,
+    required this.bonReceptionId,
     required this.date,
     required this.montant,
     required this.mode,
@@ -15686,7 +15738,7 @@ class PaiementsFournisseur extends DataClass
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
-    map['facture_fournisseur_id'] = Variable<int>(factureFournisseurId);
+    map['bon_reception_id'] = Variable<int>(bonReceptionId);
     map['date'] = Variable<DateTime>(date);
     map['montant'] = Variable<double>(montant);
     map['mode'] = Variable<int>(mode);
@@ -15702,7 +15754,7 @@ class PaiementsFournisseur extends DataClass
   PaiementsFournisseursCompanion toCompanion(bool nullToAbsent) {
     return PaiementsFournisseursCompanion(
       id: Value(id),
-      factureFournisseurId: Value(factureFournisseurId),
+      bonReceptionId: Value(bonReceptionId),
       date: Value(date),
       montant: Value(montant),
       mode: Value(mode),
@@ -15722,9 +15774,7 @@ class PaiementsFournisseur extends DataClass
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return PaiementsFournisseur(
       id: serializer.fromJson<int>(json['id']),
-      factureFournisseurId: serializer.fromJson<int>(
-        json['factureFournisseurId'],
-      ),
+      bonReceptionId: serializer.fromJson<int>(json['bonReceptionId']),
       date: serializer.fromJson<DateTime>(json['date']),
       montant: serializer.fromJson<double>(json['montant']),
       mode: serializer.fromJson<int>(json['mode']),
@@ -15739,7 +15789,7 @@ class PaiementsFournisseur extends DataClass
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
-      'factureFournisseurId': serializer.toJson<int>(factureFournisseurId),
+      'bonReceptionId': serializer.toJson<int>(bonReceptionId),
       'date': serializer.toJson<DateTime>(date),
       'montant': serializer.toJson<double>(montant),
       'mode': serializer.toJson<int>(mode),
@@ -15752,7 +15802,7 @@ class PaiementsFournisseur extends DataClass
 
   PaiementsFournisseur copyWith({
     int? id,
-    int? factureFournisseurId,
+    int? bonReceptionId,
     DateTime? date,
     double? montant,
     int? mode,
@@ -15762,7 +15812,7 @@ class PaiementsFournisseur extends DataClass
     Value<int?> createdByUserId = const Value.absent(),
   }) => PaiementsFournisseur(
     id: id ?? this.id,
-    factureFournisseurId: factureFournisseurId ?? this.factureFournisseurId,
+    bonReceptionId: bonReceptionId ?? this.bonReceptionId,
     date: date ?? this.date,
     montant: montant ?? this.montant,
     mode: mode ?? this.mode,
@@ -15776,9 +15826,9 @@ class PaiementsFournisseur extends DataClass
   PaiementsFournisseur copyWithCompanion(PaiementsFournisseursCompanion data) {
     return PaiementsFournisseur(
       id: data.id.present ? data.id.value : this.id,
-      factureFournisseurId: data.factureFournisseurId.present
-          ? data.factureFournisseurId.value
-          : this.factureFournisseurId,
+      bonReceptionId: data.bonReceptionId.present
+          ? data.bonReceptionId.value
+          : this.bonReceptionId,
       date: data.date.present ? data.date.value : this.date,
       montant: data.montant.present ? data.montant.value : this.montant,
       mode: data.mode.present ? data.mode.value : this.mode,
@@ -15795,7 +15845,7 @@ class PaiementsFournisseur extends DataClass
   String toString() {
     return (StringBuffer('PaiementsFournisseur(')
           ..write('id: $id, ')
-          ..write('factureFournisseurId: $factureFournisseurId, ')
+          ..write('bonReceptionId: $bonReceptionId, ')
           ..write('date: $date, ')
           ..write('montant: $montant, ')
           ..write('mode: $mode, ')
@@ -15810,7 +15860,7 @@ class PaiementsFournisseur extends DataClass
   @override
   int get hashCode => Object.hash(
     id,
-    factureFournisseurId,
+    bonReceptionId,
     date,
     montant,
     mode,
@@ -15824,7 +15874,7 @@ class PaiementsFournisseur extends DataClass
       identical(this, other) ||
       (other is PaiementsFournisseur &&
           other.id == this.id &&
-          other.factureFournisseurId == this.factureFournisseurId &&
+          other.bonReceptionId == this.bonReceptionId &&
           other.date == this.date &&
           other.montant == this.montant &&
           other.mode == this.mode &&
@@ -15837,7 +15887,7 @@ class PaiementsFournisseur extends DataClass
 class PaiementsFournisseursCompanion
     extends UpdateCompanion<PaiementsFournisseur> {
   final Value<int> id;
-  final Value<int> factureFournisseurId;
+  final Value<int> bonReceptionId;
   final Value<DateTime> date;
   final Value<double> montant;
   final Value<int> mode;
@@ -15847,7 +15897,7 @@ class PaiementsFournisseursCompanion
   final Value<int?> createdByUserId;
   const PaiementsFournisseursCompanion({
     this.id = const Value.absent(),
-    this.factureFournisseurId = const Value.absent(),
+    this.bonReceptionId = const Value.absent(),
     this.date = const Value.absent(),
     this.montant = const Value.absent(),
     this.mode = const Value.absent(),
@@ -15858,7 +15908,7 @@ class PaiementsFournisseursCompanion
   });
   PaiementsFournisseursCompanion.insert({
     this.id = const Value.absent(),
-    required int factureFournisseurId,
+    required int bonReceptionId,
     required DateTime date,
     required double montant,
     this.mode = const Value.absent(),
@@ -15866,14 +15916,14 @@ class PaiementsFournisseursCompanion
     required DateTime createdAt,
     required DateTime updatedAt,
     this.createdByUserId = const Value.absent(),
-  }) : factureFournisseurId = Value(factureFournisseurId),
+  }) : bonReceptionId = Value(bonReceptionId),
        date = Value(date),
        montant = Value(montant),
        createdAt = Value(createdAt),
        updatedAt = Value(updatedAt);
   static Insertable<PaiementsFournisseur> custom({
     Expression<int>? id,
-    Expression<int>? factureFournisseurId,
+    Expression<int>? bonReceptionId,
     Expression<DateTime>? date,
     Expression<double>? montant,
     Expression<int>? mode,
@@ -15884,8 +15934,7 @@ class PaiementsFournisseursCompanion
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
-      if (factureFournisseurId != null)
-        'facture_fournisseur_id': factureFournisseurId,
+      if (bonReceptionId != null) 'bon_reception_id': bonReceptionId,
       if (date != null) 'date': date,
       if (montant != null) 'montant': montant,
       if (mode != null) 'mode': mode,
@@ -15898,7 +15947,7 @@ class PaiementsFournisseursCompanion
 
   PaiementsFournisseursCompanion copyWith({
     Value<int>? id,
-    Value<int>? factureFournisseurId,
+    Value<int>? bonReceptionId,
     Value<DateTime>? date,
     Value<double>? montant,
     Value<int>? mode,
@@ -15909,7 +15958,7 @@ class PaiementsFournisseursCompanion
   }) {
     return PaiementsFournisseursCompanion(
       id: id ?? this.id,
-      factureFournisseurId: factureFournisseurId ?? this.factureFournisseurId,
+      bonReceptionId: bonReceptionId ?? this.bonReceptionId,
       date: date ?? this.date,
       montant: montant ?? this.montant,
       mode: mode ?? this.mode,
@@ -15926,8 +15975,8 @@ class PaiementsFournisseursCompanion
     if (id.present) {
       map['id'] = Variable<int>(id.value);
     }
-    if (factureFournisseurId.present) {
-      map['facture_fournisseur_id'] = Variable<int>(factureFournisseurId.value);
+    if (bonReceptionId.present) {
+      map['bon_reception_id'] = Variable<int>(bonReceptionId.value);
     }
     if (date.present) {
       map['date'] = Variable<DateTime>(date.value);
@@ -15957,7 +16006,7 @@ class PaiementsFournisseursCompanion
   String toString() {
     return (StringBuffer('PaiementsFournisseursCompanion(')
           ..write('id: $id, ')
-          ..write('factureFournisseurId: $factureFournisseurId, ')
+          ..write('bonReceptionId: $bonReceptionId, ')
           ..write('date: $date, ')
           ..write('montant: $montant, ')
           ..write('mode: $mode, ')
@@ -28659,6 +28708,7 @@ typedef $$BonsReceptionTableCreateCompanionBuilder =
       Value<int?> bonCommandeId,
       Value<int?> factureFournisseurId,
       required DateTime date,
+      Value<bool> estPayee,
       Value<double> totalTtc,
       Value<String> note,
       required DateTime createdAt,
@@ -28673,6 +28723,7 @@ typedef $$BonsReceptionTableUpdateCompanionBuilder =
       Value<int?> bonCommandeId,
       Value<int?> factureFournisseurId,
       Value<DateTime> date,
+      Value<bool> estPayee,
       Value<double> totalTtc,
       Value<String> note,
       Value<DateTime> createdAt,
@@ -28716,6 +28767,11 @@ class $$BonsReceptionTableFilterComposer
 
   ColumnFilters<DateTime> get date => $composableBuilder(
     column: $table.date,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get estPayee => $composableBuilder(
+    column: $table.estPayee,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -28784,6 +28840,11 @@ class $$BonsReceptionTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get estPayee => $composableBuilder(
+    column: $table.estPayee,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<double> get totalTtc => $composableBuilder(
     column: $table.totalTtc,
     builder: (column) => ColumnOrderings(column),
@@ -28842,6 +28903,9 @@ class $$BonsReceptionTableAnnotationComposer
 
   GeneratedColumn<DateTime> get date =>
       $composableBuilder(column: $table.date, builder: (column) => column);
+
+  GeneratedColumn<bool> get estPayee =>
+      $composableBuilder(column: $table.estPayee, builder: (column) => column);
 
   GeneratedColumn<double> get totalTtc =>
       $composableBuilder(column: $table.totalTtc, builder: (column) => column);
@@ -28902,6 +28966,7 @@ class $$BonsReceptionTableTableManager
                 Value<int?> bonCommandeId = const Value.absent(),
                 Value<int?> factureFournisseurId = const Value.absent(),
                 Value<DateTime> date = const Value.absent(),
+                Value<bool> estPayee = const Value.absent(),
                 Value<double> totalTtc = const Value.absent(),
                 Value<String> note = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
@@ -28914,6 +28979,7 @@ class $$BonsReceptionTableTableManager
                 bonCommandeId: bonCommandeId,
                 factureFournisseurId: factureFournisseurId,
                 date: date,
+                estPayee: estPayee,
                 totalTtc: totalTtc,
                 note: note,
                 createdAt: createdAt,
@@ -28928,6 +28994,7 @@ class $$BonsReceptionTableTableManager
                 Value<int?> bonCommandeId = const Value.absent(),
                 Value<int?> factureFournisseurId = const Value.absent(),
                 required DateTime date,
+                Value<bool> estPayee = const Value.absent(),
                 Value<double> totalTtc = const Value.absent(),
                 Value<String> note = const Value.absent(),
                 required DateTime createdAt,
@@ -28940,6 +29007,7 @@ class $$BonsReceptionTableTableManager
                 bonCommandeId: bonCommandeId,
                 factureFournisseurId: factureFournisseurId,
                 date: date,
+                estPayee: estPayee,
                 totalTtc: totalTtc,
                 note: note,
                 createdAt: createdAt,
@@ -30012,7 +30080,7 @@ typedef $$FactureFournisseurLignesTableProcessedTableManager =
 typedef $$PaiementsFournisseursTableCreateCompanionBuilder =
     PaiementsFournisseursCompanion Function({
       Value<int> id,
-      required int factureFournisseurId,
+      required int bonReceptionId,
       required DateTime date,
       required double montant,
       Value<int> mode,
@@ -30024,7 +30092,7 @@ typedef $$PaiementsFournisseursTableCreateCompanionBuilder =
 typedef $$PaiementsFournisseursTableUpdateCompanionBuilder =
     PaiementsFournisseursCompanion Function({
       Value<int> id,
-      Value<int> factureFournisseurId,
+      Value<int> bonReceptionId,
       Value<DateTime> date,
       Value<double> montant,
       Value<int> mode,
@@ -30048,8 +30116,8 @@ class $$PaiementsFournisseursTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<int> get factureFournisseurId => $composableBuilder(
-    column: $table.factureFournisseurId,
+  ColumnFilters<int> get bonReceptionId => $composableBuilder(
+    column: $table.bonReceptionId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -30103,8 +30171,8 @@ class $$PaiementsFournisseursTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<int> get factureFournisseurId => $composableBuilder(
-    column: $table.factureFournisseurId,
+  ColumnOrderings<int> get bonReceptionId => $composableBuilder(
+    column: $table.bonReceptionId,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -30156,8 +30224,8 @@ class $$PaiementsFournisseursTableAnnotationComposer
   GeneratedColumn<int> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
 
-  GeneratedColumn<int> get factureFournisseurId => $composableBuilder(
-    column: $table.factureFournisseurId,
+  GeneratedColumn<int> get bonReceptionId => $composableBuilder(
+    column: $table.bonReceptionId,
     builder: (column) => column,
   );
 
@@ -30232,7 +30300,7 @@ class $$PaiementsFournisseursTableTableManager
           updateCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
-                Value<int> factureFournisseurId = const Value.absent(),
+                Value<int> bonReceptionId = const Value.absent(),
                 Value<DateTime> date = const Value.absent(),
                 Value<double> montant = const Value.absent(),
                 Value<int> mode = const Value.absent(),
@@ -30242,7 +30310,7 @@ class $$PaiementsFournisseursTableTableManager
                 Value<int?> createdByUserId = const Value.absent(),
               }) => PaiementsFournisseursCompanion(
                 id: id,
-                factureFournisseurId: factureFournisseurId,
+                bonReceptionId: bonReceptionId,
                 date: date,
                 montant: montant,
                 mode: mode,
@@ -30254,7 +30322,7 @@ class $$PaiementsFournisseursTableTableManager
           createCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
-                required int factureFournisseurId,
+                required int bonReceptionId,
                 required DateTime date,
                 required double montant,
                 Value<int> mode = const Value.absent(),
@@ -30264,7 +30332,7 @@ class $$PaiementsFournisseursTableTableManager
                 Value<int?> createdByUserId = const Value.absent(),
               }) => PaiementsFournisseursCompanion.insert(
                 id: id,
-                factureFournisseurId: factureFournisseurId,
+                bonReceptionId: bonReceptionId,
                 date: date,
                 montant: montant,
                 mode: mode,

@@ -318,7 +318,6 @@ class _FactureFournisseurListPageState
                 DataColumn(label: Text(s.colEcheance)),
                 DataColumn(label: Text(s.colBrs)),
                 DataColumn(label: Text(s.colTotalTtc), numeric: true),
-                DataColumn(label: Text(s.colReste), numeric: true),
                 DataColumn(label: Text(s.colStatut)),
                 const DataColumn(label: SizedBox.shrink()),
               ],
@@ -336,7 +335,6 @@ class _FactureFournisseurListPageState
                       DataCell(Text(dateFormat.format(row.facture.dateEcheance))),
                       DataCell(Text(row.brNumeros.join(', '))),
                       DataCell(Text(formatMoney(row.facture.totalTtc))),
-                      DataCell(Text(formatMoney(row.resteAPayer))),
                       DataCell(_statusChip(context, row)),
                       DataCell(
                         IconButton(

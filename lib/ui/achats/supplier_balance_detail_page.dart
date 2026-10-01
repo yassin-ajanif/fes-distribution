@@ -9,8 +9,8 @@ import 'package:fes_distribution/ui/common/tiers_balance_view.dart';
 import 'package:fes_distribution/ui/l10n/strings_scope.dart';
 import 'package:fes_distribution/ui/providers/service_providers.dart';
 
-/// Breakdown of one supplier's debt: the figures on top, then the factures
-/// (which carry the payments) and the BRs no facture covers yet.
+/// Breakdown of one supplier's debt: the figures on top, then every BR behind
+/// them, each with what was paid on it. Tapping a BR opens it.
 class SupplierBalanceDetailPage extends ConsumerStatefulWidget {
   const SupplierBalanceDetailPage({super.key, required this.fournisseurId});
 
@@ -57,11 +57,8 @@ class _SupplierBalanceDetailPageState
     }
   }
 
-  Future<void> _openDocument(SupplierBalanceLine line) async {
-    final path = line.kind == SupplierDocumentKind.facture
-        ? '/achats/factures-fournisseur/${line.documentId}'
-        : '/achats/bons-reception/${line.documentId}';
-    await context.push(path);
+  Future<void> _openBr(int brId) async {
+    await context.push('/achats/bons-reception/$brId');
     if (mounted) _load();
   }
 
@@ -89,33 +86,31 @@ class _SupplierBalanceDetailPageState
             ? const []
             : [
                 (
-                  '${s.balanceReceived} (${s.supplierDocumentCount(b.nbFacture)})',
-                  formatMoney(b.totalFacture),
+                  '${s.balanceReceived} (${s.balanceBrCount(b.nbBr)})',
+                  formatMoney(b.totalLivraison),
                 ),
-                (s.balancePendingBr, formatMoney(b.totalBrNonFacture)),
                 (s.balancePaid, formatMoney(b.totalPaye)),
               ],
-        detailLabel: s.supplierDocumentsLabel,
+        detailLabel: s.balanceBrDetails,
         documents: [
           for (final d in _documents)
             TiersBalanceDocument(
-              id: d.documentId,
+              id: d.brId,
               title: d.numero,
-              subtitle:
-                  '${d.kind == SupplierDocumentKind.facture ? s.menuFactures : s.menuBr} • '
-                  '${dateFormat.format(d.date)}',
+              subtitle: d.factureNumero == null
+                  ? dateFormat.format(d.date)
+                  : '${s.menuFacturesFournisseur} ${d.factureNumero} • '
+                      '${dateFormat.format(d.date)}',
               total: d.totalTtc,
               reste: d.reste,
-              tag: d,
             ),
         ],
-        // A supplier avoir carries no link to a facture, so it is only ever
-        // deducted at the supplier level.
+        // A supplier avoir carries no link to a BR, so it is only ever deducted
+        // at the supplier level.
         creditNoteLabel: s.balanceCreditNotes,
         creditNoteAmount: b?.totalAvoir ?? 0,
         emptyText: s.emptyBr,
-        onTapDocument: (doc) =>
-            _openDocument(doc.tag! as SupplierBalanceLine),
+        onTapDocument: (doc) => _openBr(doc.id),
       ),
     );
   }

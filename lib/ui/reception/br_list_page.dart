@@ -273,6 +273,7 @@ class _BrListPageState extends ConsumerState<BrListPage> {
                 DataColumn(label: Text(s.fieldFournisseur)),
                 DataColumn(label: Text(s.fieldDate)),
                 DataColumn(label: Text(s.colTotalTtc), numeric: true),
+                DataColumn(label: Text(s.colReste), numeric: true),
                 DataColumn(label: Text(s.colFacture)),
                 DataColumn(label: Text(s.note)),
                 const DataColumn(label: SizedBox.shrink()),
@@ -289,6 +290,7 @@ class _BrListPageState extends ConsumerState<BrListPage> {
                       DataCell(Text(row.fournisseurNom)),
                       DataCell(Text(dateFormat.format(row.br.date))),
                       DataCell(Text(formatMoney(row.br.totalTtc))),
+                      DataCell(Text(formatMoney(row.resteAPayer))),
                       DataCell(_factureChip(row)),
                       DataCell(
                         SizedBox(

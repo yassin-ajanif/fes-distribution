@@ -19,6 +19,8 @@ class BonsReception extends Table {
       .nullable()
       .references(FacturesFournisseurs, #id, onDelete: KeyAction.setNull)();
   DateTimeColumn get date => dateTime()();
+  /// Derived from the payments recorded on the BR, like `BonsLivraison.estPayee`.
+  BoolColumn get estPayee => boolean().withDefault(const Constant(false))();
   RealColumn get totalTtc => real().withDefault(const Constant(0))();
   TextColumn get note => text().withDefault(const Constant(''))();
   DateTimeColumn get createdAt => dateTime()();

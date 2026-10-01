@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:fes_distribution/business/helpers/document_totals.dart';
 import 'package:fes_distribution/business/models/document_line.dart';
-import 'package:fes_distribution/business/models/document_paiement.dart';
 import 'package:fes_distribution/business/models/linked_document.dart';
 import 'package:fes_distribution/db/app_database.dart';
 import 'package:fes_distribution/ui/common/app_bar_save_button.dart';
@@ -16,7 +15,6 @@ import 'package:fes_distribution/ui/common/fournisseur_field.dart';
 import 'package:fes_distribution/ui/common/linked_document_picker_dialog.dart';
 import 'package:fes_distribution/ui/common/loading_view.dart';
 import 'package:fes_distribution/ui/common/new_tiers_dialog.dart';
-import 'package:fes_distribution/ui/common/paiement_dialog.dart';
 import 'package:fes_distribution/ui/common/product_search_card.dart';
 import 'package:fes_distribution/ui/l10n/strings_scope.dart';
 import 'package:fes_distribution/ui/providers/service_providers.dart';
@@ -52,7 +50,6 @@ class _FactureFournisseurEditPageState
   List<Produit> _produits = [];
   List<DocumentLine> _lines = [];
   List<LinkedDocument> _brs = [];
-  List<DocumentPaiement> _paiements = [];
 
   bool get _isNew => widget.factureId == null;
 
@@ -73,13 +70,6 @@ class _FactureFournisseurEditPageState
 
   DocumentTotals get _totals =>
       DocumentTotals.fromLines(_lines, remiseGlobale: _remiseGlobale);
-
-  double get _totalPaye => _paiements.fold(0, (s, p) => s + p.montant);
-
-  double get _reste {
-    final r = _totals.totalTtc - _totalPaye;
-    return r > 0 ? r : 0;
-  }
 
   Future<void> _load() async {
     setState(() => _loading = true);
@@ -103,7 +93,6 @@ class _FactureFournisseurEditPageState
         _noteController.text = f.note;
         _lines = doc.lines;
         _brs = doc.brs;
-        _paiements = doc.paiements;
       } else if (widget.fromBrId != null) {
         final br =
             await ref.read(bonReceptionServiceProvider).getById(widget.fromBrId!);
@@ -214,22 +203,6 @@ class _FactureFournisseurEditPageState
     });
   }
 
-  Future<void> _addPaiement() async {
-    final paiement = await showPaiementDialog(context, suggested: _reste);
-    if (paiement == null || !mounted) return;
-    final s = context.s;
-    final total = _totalPaye + paiement.montant;
-    if (DocumentTotals.paymentsExceedTtc(_totals.totalTtc, total)) {
-      await showErrorDialog(
-        context,
-        title: s.paiements,
-        message: s.errPaymentsExceed(formatMoney(total), formatMoney(_totals.totalTtc)),
-      );
-      return;
-    }
-    setState(() => _paiements = [paiement, ..._paiements]);
-  }
-
   Future<void> _save() async {
     final s = context.s;
     final title = s.menuFacturesFournisseur;
@@ -243,11 +216,6 @@ class _FactureFournisseurEditPageState
       error = s.errRemiseGlobale;
     } else if (DocumentTotals.isEffectivelyZero(_totals.totalTtc)) {
       error = s.errZeroTtc;
-    } else if (DocumentTotals.paymentsExceedTtc(_totals.totalTtc, _totalPaye)) {
-      error = s.errPaymentsExceed(
-        formatMoney(_totalPaye),
-        formatMoney(_totals.totalTtc),
-      );
     }
     if (error != null) {
       await showErrorDialog(context, title: title, message: error);
@@ -266,7 +234,6 @@ class _FactureFournisseurEditPageState
             note: _noteController.text,
             lines: _lines,
             brIds: _brs.map((b) => b.id).toList(),
-            paiements: _paiements,
           );
       if (!mounted) return;
       ScaffoldMessenger.of(context)
@@ -357,8 +324,6 @@ class _FactureFournisseurEditPageState
                 ),
                 const SizedBox(height: 16),
                 _buildTotals(context),
-                const SizedBox(height: 16),
-                _buildPaiements(context),
                 const SizedBox(height: 16),
                 Card(
                   child: Padding(
@@ -493,69 +458,7 @@ class _FactureFournisseurEditPageState
           onChanged: (_) => setState(() {}),
         ),
       ),
-      extra: [
-        const SizedBox(height: 4),
-        Text(s.montantPaye(formatMoney(_totalPaye))),
-        Text(
-          s.resteAPayer(formatMoney(_reste)),
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            color: _reste > DocumentTotals.paiementTtcTolerance
-                ? AppColors.danger
-                : AppColors.brand,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildPaiements(BuildContext context) {
-    final s = context.s;
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(s.paiements, style: Theme.of(context).textTheme.titleSmall),
-                ),
-                TextButton.icon(
-                  onPressed: _addPaiement,
-                  icon: const Icon(Icons.add),
-                  label: Text(s.addPaiement),
-                ),
-              ],
-            ),
-            if (_paiements.isEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                child: Text(s.noPaiement, style: TextStyle(color: AppColors.muted)),
-              )
-            else
-              for (var i = 0; i < _paiements.length; i++)
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.payments_outlined),
-                  title: Text(formatMoney(_paiements[i].montant)),
-                  subtitle: Text(
-                    [
-                      dateFormat.format(_paiements[i].date),
-                      _paiements[i].mode.label(s),
-                      if (_paiements[i].reference.isNotEmpty) _paiements[i].reference,
-                    ].join(' · '),
-                  ),
-                  trailing: IconButton(
-                    tooltip: s.actionDelete,
-                    icon: const Icon(Icons.delete_outline, size: 20),
-                    onPressed: () => setState(() => _paiements.removeAt(i)),
-                  ),
-                ),
-          ],
-        ),
-      ),
+      extra: const [],
     );
   }
 }

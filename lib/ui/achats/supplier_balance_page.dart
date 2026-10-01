@@ -12,7 +12,8 @@ import 'package:fes_distribution/ui/providers/service_providers.dart';
 /// "Solde fournisseurs": what we still owe each supplier, biggest first.
 ///
 /// A supplier owes nothing to us, so the figure is what *we* have to pay:
-/// factures + BRs not yet invoiced − payments − credit notes.
+/// BR totals − payments − credit notes. Payments sit on the BR, mirroring the
+/// ventes side.
 class SupplierBalancePage extends ConsumerStatefulWidget {
   const SupplierBalancePage({super.key});
 
@@ -87,8 +88,8 @@ class _SupplierBalancePageState extends ConsumerState<SupplierBalancePage> {
             TiersBalanceRow(
               id: b.fournisseurId,
               name: b.fournisseurNom,
-              subtitle: '${s.supplierDocumentCount(b.nbFacture + b.nbBrNonFacture)} • '
-                  '${s.balanceReceived} ${formatMoney(b.totalRecu)} • '
+              subtitle: '${s.balanceBrCount(b.nbBr)} • '
+                  '${s.balanceReceived} ${formatMoney(b.totalLivraison)} • '
                   '${s.balancePaid} ${formatMoney(b.totalPaye)}',
               amount: b.solde,
               owes: b.doit,

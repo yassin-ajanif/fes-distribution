@@ -7,10 +7,11 @@ import 'package:fes_distribution/db/app_database.dart';
 
 /// What we still owe each supplier.
 ///
-/// Stock enters the depot on a BR, which is not yet a debt until it is
-/// invoiced; the debt itself is the facture, and that is where supplier
-/// payments are recorded. A facture's TTC already contains the BRs it groups,
-/// so only the BRs *not* linked to a facture are added separately.
+/// The mirror image of [ClientBalance]: BR totals − payments − credit notes.
+/// Supplier payments live on the BR, so a BR counts as a debt as soon as the
+/// goods are received, invoiced or not. A facture fournisseur only groups BRs
+/// and carries no money, so it never enters the sum — which is what used to
+/// require a special case to avoid counting an invoiced BR twice.
 class SupplierBalanceService {
   SupplierBalanceService(this._db);
 
@@ -45,7 +46,9 @@ class SupplierBalanceService {
     balances.sort((a, b) {
       final bySolde = b.solde.compareTo(a.solde);
       if (bySolde != 0) return bySolde;
-      return a.fournisseurNom.toLowerCase().compareTo(b.fournisseurNom.toLowerCase());
+      return a.fournisseurNom
+          .toLowerCase()
+          .compareTo(b.fournisseurNom.toLowerCase());
     });
     return balances;
   }
@@ -60,113 +63,71 @@ class SupplierBalanceService {
     return balances.isEmpty ? null : balances.first;
   }
 
-  /// The invoices and uninvoiced BRs behind one supplier's balance, newest
-  /// first.
+  /// Every BR behind one supplier's balance, newest first.
   ///
   /// Credit notes are not attributed to a document: a supplier avoir has no
-  /// link to a facture, so it is only deducted at the supplier level.
+  /// link to a BR, so it is only deducted at the supplier level.
   Future<List<SupplierBalanceLine>> documentDetails(int fournisseurId) async {
-    final factures = await (_db.select(_db.facturesFournisseurs)
-          ..where((f) => f.fournisseurId.equals(fournisseurId))
-          ..orderBy([
-            (f) => OrderingTerm.desc(f.date),
-            (f) => OrderingTerm.desc(f.id),
-          ]))
-        .get();
-
-    final paidByFacture = <int, double>{};
-    if (factures.isNotEmpty) {
-      final paiements = await (_db.select(_db.paiementsFournisseurs)
-            ..where(
-              (p) => p.factureFournisseurId
-                  .isIn(factures.map((f) => f.id).toList()),
-            ))
-          .get();
-      for (final p in paiements) {
-        paidByFacture[p.factureFournisseurId] =
-            (paidByFacture[p.factureFournisseurId] ?? 0) + p.montant;
-      }
-    }
-
     final brs = await (_db.select(_db.bonsReception)
-          ..where(
-            (b) =>
-                b.fournisseurId.equals(fournisseurId) &
-                b.factureFournisseurId.isNull(),
-          )
+          ..where((b) => b.fournisseurId.equals(fournisseurId))
           ..orderBy([
             (b) => OrderingTerm.desc(b.date),
             (b) => OrderingTerm.desc(b.id),
           ]))
         .get();
+    if (brs.isEmpty) return [];
 
-    final lines = <SupplierBalanceLine>[
-      for (final f in factures)
-        SupplierBalanceLine(
-          documentId: f.id,
-          kind: SupplierDocumentKind.facture,
-          numero: f.numero,
-          date: f.date,
-          totalTtc: f.totalTtc,
-          totalPaye: paidByFacture[f.id] ?? 0,
-        ),
+    final paidByBr = await _payeByBr(brs.map((b) => b.id).toList());
+
+    final factureIds =
+        brs.map((b) => b.factureFournisseurId).whereType<int>().toSet();
+    final factures = factureIds.isEmpty
+        ? <FacturesFournisseur>[]
+        : await (_db.select(_db.facturesFournisseurs)
+              ..where((f) => f.id.isIn(factureIds.toList())))
+            .get();
+    final factureMap = {for (final f in factures) f.id: f.numero};
+
+    return [
       for (final b in brs)
         SupplierBalanceLine(
-          documentId: b.id,
-          kind: SupplierDocumentKind.bonReception,
+          brId: b.id,
           numero: b.numero,
           date: b.date,
           totalTtc: b.totalTtc,
-          totalPaye: 0,
+          totalPaye: paidByBr[b.id] ?? 0,
+          factureNumero: factureMap[b.factureFournisseurId],
         ),
     ];
-    lines.sort((a, b) => b.date.compareTo(a.date));
-    return lines;
   }
 
   Future<List<SupplierBalance>> _compute(List<Tier> fournisseurs) async {
     final ids = fournisseurs.map((f) => f.id).toList();
 
-    final factureByFournisseur = <int, double>{};
-    final nbFacture = <int, int>{};
-    final fournisseurByFacture = <int, int>{};
-    final factureIds = <int>[];
-
-    final factures = await (_db.select(_db.facturesFournisseurs)
-          ..where((f) => f.fournisseurId.isIn(ids)))
+    final brs = await (_db.select(_db.bonsReception)
+          ..where((b) => b.fournisseurId.isIn(ids)))
         .get();
-    for (final f in factures) {
-      factureByFournisseur[f.fournisseurId] =
-          (factureByFournisseur[f.fournisseurId] ?? 0) + f.totalTtc;
-      nbFacture[f.fournisseurId] = (nbFacture[f.fournisseurId] ?? 0) + 1;
-      fournisseurByFacture[f.id] = f.fournisseurId;
-      factureIds.add(f.id);
+
+    final totalByFournisseur = <int, double>{};
+    final nbByFournisseur = <int, int>{};
+    for (final b in brs) {
+      totalByFournisseur[b.fournisseurId] =
+          (totalByFournisseur[b.fournisseurId] ?? 0) + b.totalTtc;
+      nbByFournisseur[b.fournisseurId] = (nbByFournisseur[b.fournisseurId] ?? 0) + 1;
     }
 
     final payeByFournisseur = <int, double>{};
-    if (factureIds.isNotEmpty) {
+    if (brs.isNotEmpty) {
+      final fournisseurByBr = {for (final b in brs) b.id: b.fournisseurId};
       final paiements = await (_db.select(_db.paiementsFournisseurs)
-            ..where((p) => p.factureFournisseurId.isIn(factureIds)))
+            ..where((p) => p.bonReceptionId.isIn(fournisseurByBr.keys.toList())))
           .get();
       for (final p in paiements) {
-        final fournisseurId = fournisseurByFacture[p.factureFournisseurId];
+        final fournisseurId = fournisseurByBr[p.bonReceptionId];
         if (fournisseurId == null) continue;
         payeByFournisseur[fournisseurId] =
             (payeByFournisseur[fournisseurId] ?? 0) + p.montant;
       }
-    }
-
-    // Only the BRs no facture covers yet: an invoiced BR is already inside its
-    // facture's total and adding it again would double-count.
-    final brByFournisseur = <int, double>{};
-    final nbBr = <int, int>{};
-    final brs = await (_db.select(_db.bonsReception)
-          ..where((b) => b.fournisseurId.isIn(ids) & b.factureFournisseurId.isNull()))
-        .get();
-    for (final b in brs) {
-      brByFournisseur[b.fournisseurId] =
-          (brByFournisseur[b.fournisseurId] ?? 0) + b.totalTtc;
-      nbBr[b.fournisseurId] = (nbBr[b.fournisseurId] ?? 0) + 1;
     }
 
     final avoirByFournisseur = await _avoirTtcByFournisseur(ids);
@@ -176,14 +137,23 @@ class SupplierBalanceService {
         SupplierBalance(
           fournisseurId: f.id,
           fournisseurNom: f.nom,
-          totalFacture: factureByFournisseur[f.id] ?? 0,
-          totalBrNonFacture: brByFournisseur[f.id] ?? 0,
+          totalLivraison: totalByFournisseur[f.id] ?? 0,
           totalPaye: payeByFournisseur[f.id] ?? 0,
           totalAvoir: avoirByFournisseur[f.id] ?? 0,
-          nbFacture: nbFacture[f.id] ?? 0,
-          nbBrNonFacture: nbBr[f.id] ?? 0,
+          nbBr: nbByFournisseur[f.id] ?? 0,
         ),
     ];
+  }
+
+  Future<Map<int, double>> _payeByBr(List<int> brIds) async {
+    final paiements = await (_db.select(_db.paiementsFournisseurs)
+          ..where((p) => p.bonReceptionId.isIn(brIds)))
+        .get();
+    final paid = <int, double>{};
+    for (final p in paiements) {
+      paid[p.bonReceptionId] = (paid[p.bonReceptionId] ?? 0) + p.montant;
+    }
+    return paid;
   }
 
   Future<Map<int, double>> _avoirTtcByFournisseur(List<int> ids) async {

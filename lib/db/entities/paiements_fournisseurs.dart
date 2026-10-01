@@ -1,14 +1,17 @@
 import 'package:drift/drift.dart';
 
-import 'factures_fournisseurs.dart';
+import 'bons_reception.dart';
 
+/// A payment made to a supplier, recorded on the bon de réception — mirroring
+/// `PaiementsBonLivraison`. A BR is the debt (goods received); the facture
+/// fournisseur that later groups it carries no money of its own.
 class PaiementsFournisseurs extends Table {
   @override
   String get tableName => 'PaiementsFournisseurs';
 
   IntColumn get id => integer().autoIncrement()();
-  IntColumn get factureFournisseurId => integer()
-      .references(FacturesFournisseurs, #id, onDelete: KeyAction.cascade)();
+  IntColumn get bonReceptionId => integer()
+      .references(BonsReception, #id, onDelete: KeyAction.cascade)();
   DateTimeColumn get date => dateTime()();
   RealColumn get montant => real()();
   IntColumn get mode => integer().withDefault(const Constant(0))();

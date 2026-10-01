@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:fes_distribution/business/helpers/document_totals.dart';
 import 'package:fes_distribution/business/models/document_line.dart';
+import 'package:fes_distribution/business/models/document_paiement.dart';
 import 'package:fes_distribution/db/app_database.dart';
 import 'package:fes_distribution/ui/common/app_bar_save_button.dart';
 import 'package:fes_distribution/ui/common/confirm_dialog.dart';
@@ -12,6 +13,7 @@ import 'package:fes_distribution/ui/common/formatters.dart';
 import 'package:fes_distribution/ui/common/fournisseur_field.dart';
 import 'package:fes_distribution/ui/common/loading_view.dart';
 import 'package:fes_distribution/ui/common/new_tiers_dialog.dart';
+import 'package:fes_distribution/ui/common/paiement_dialog.dart';
 import 'package:fes_distribution/ui/common/product_search_card.dart';
 import 'package:fes_distribution/ui/l10n/strings_scope.dart';
 import 'package:fes_distribution/ui/providers/service_providers.dart';
@@ -41,6 +43,7 @@ class _BrEditPageState extends ConsumerState<BrEditPage> {
   List<Tier> _fournisseurs = [];
   List<Produit> _produits = [];
   List<DocumentLine> _lines = [];
+  List<DocumentPaiement> _paiements = [];
 
   bool get _isNew => widget.brId == null;
 
@@ -57,6 +60,13 @@ class _BrEditPageState extends ConsumerState<BrEditPage> {
   }
 
   DocumentTotals get _totals => DocumentTotals.fromLines(_lines);
+
+  double get _totalPaye => _paiements.fold(0, (s, p) => s + p.montant);
+
+  double get _reste {
+    final r = _totals.totalTtc - _totalPaye;
+    return r > 0 ? r : 0;
+  }
 
   Future<void> _load() async {
     setState(() => _loading = true);
@@ -77,6 +87,7 @@ class _BrEditPageState extends ConsumerState<BrEditPage> {
         _noteController.text = doc.br.note;
         _factureNumero = doc.factureNumero;
         _lines = doc.lines;
+        _paiements = doc.paiements;
       }
       if (fournisseurId != null && !fournisseurs.any((f) => f.id == fournisseurId)) {
         final f = await tiers.getById(fournisseurId);
@@ -125,6 +136,25 @@ class _BrEditPageState extends ConsumerState<BrEditPage> {
     });
   }
 
+  Future<void> _addPaiement() async {
+    final paiement = await showPaiementDialog(context, suggested: _reste);
+    if (paiement == null || !mounted) return;
+    final s = context.s;
+    final total = _totalPaye + paiement.montant;
+    if (DocumentTotals.paymentsExceedTtc(_totals.totalTtc, total)) {
+      await showErrorDialog(
+        context,
+        title: s.paiements,
+        message: s.errPaymentsExceed(
+          formatMoney(total),
+          formatMoney(_totals.totalTtc),
+        ),
+      );
+      return;
+    }
+    setState(() => _paiements = [paiement, ..._paiements]);
+  }
+
   Future<void> _save() async {
     final s = context.s;
     final title = s.menuBr;
@@ -135,6 +165,11 @@ class _BrEditPageState extends ConsumerState<BrEditPage> {
       error = s.errNoLines;
     } else if (DocumentTotals.isEffectivelyZero(_totals.totalTtc)) {
       error = s.errZeroTtc;
+    } else if (DocumentTotals.paymentsExceedTtc(_totals.totalTtc, _totalPaye)) {
+      error = s.errPaymentsExceed(
+        formatMoney(_totalPaye),
+        formatMoney(_totals.totalTtc),
+      );
     }
     if (error != null) {
       await showErrorDialog(context, title: title, message: error);
@@ -149,6 +184,7 @@ class _BrEditPageState extends ConsumerState<BrEditPage> {
             date: _date,
             note: _noteController.text,
             lines: _lines,
+            paiements: _paiements,
           );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(s.brSaved)));
@@ -234,7 +270,23 @@ class _BrEditPageState extends ConsumerState<BrEditPage> {
                   onRemoveAt: (i) => setState(() => _lines.removeAt(i)),
                 ),
                 const SizedBox(height: 16),
-                DocumentTotalsCard(totals: _totals),
+                DocumentTotalsCard(
+                  totals: _totals,
+                  extra: [
+                    Text(s.montantPaye(formatMoney(_totalPaye))),
+                    Text(
+                      s.resteAPayer(formatMoney(_reste)),
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: _reste > DocumentTotals.paiementTtcTolerance
+                            ? AppColors.danger
+                            : AppColors.brand,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                _buildPaiements(context),
                 const SizedBox(height: 16),
                 Card(
                   child: Padding(
@@ -303,6 +355,60 @@ class _BrEditPageState extends ConsumerState<BrEditPage> {
                 label: Text('${s.fieldDate} : ${dateFormat.format(_date)}'),
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPaiements(BuildContext context) {
+    final s = context.s;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    s.paiements,
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                ),
+                TextButton.icon(
+                  onPressed: _addPaiement,
+                  icon: const Icon(Icons.add),
+                  label: Text(s.addPaiement),
+                ),
+              ],
+            ),
+            if (_paiements.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Text(s.noPaiement, style: TextStyle(color: AppColors.muted)),
+              )
+            else
+              for (var i = 0; i < _paiements.length; i++)
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.payments_outlined),
+                  title: Text(formatMoney(_paiements[i].montant)),
+                  subtitle: Text(
+                    [
+                      dateFormat.format(_paiements[i].date),
+                      _paiements[i].mode.label(s),
+                      if (_paiements[i].reference.isNotEmpty)
+                        _paiements[i].reference,
+                    ].join(' · '),
+                  ),
+                  trailing: IconButton(
+                    tooltip: s.actionDelete,
+                    icon: const Icon(Icons.delete_outline, size: 20),
+                    onPressed: () => setState(() => _paiements.removeAt(i)),
+                  ),
+                ),
           ],
         ),
       ),

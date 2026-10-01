@@ -286,10 +286,10 @@ class AppStrings {
     'لا يوجد مورد للفاتورة.',
   );
   String get balanceReceived => _t('Reçu', 'تم الاستلام');
-  String get balancePendingBr => _t('BR non facturés', 'بون استلام غير مفوتر');
-  String get supplierDocumentsLabel =>
-      _t('Factures & bons de réception', 'الفواتير وبون الاستلام');
-  String supplierDocumentCount(int n) => _t('$n document(s)', '$n مستند');
+  String balanceBrCount(int n) =>
+      _t('$n bon(s) de réception', 'بون استلام $n');
+  String get balanceBrDetails =>
+      _t('Détail des réceptions', 'تفصيل الاستلامات');
 
   // Produits
   String get produitNew => _t('Nouveau produit', 'منتج جديد');

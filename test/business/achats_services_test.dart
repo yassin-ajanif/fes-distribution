@@ -1,5 +1,6 @@
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:fes_distribution/business/enums/mode_paiement.dart';
 import 'package:fes_distribution/business/models/document_line.dart';
 import 'package:fes_distribution/business/models/document_paiement.dart';
 import 'package:fes_distribution/business/services/achats/avoirs_fournisseur/avoir_fournisseur_service.dart';
@@ -108,7 +109,7 @@ void main() {
     expect(await brs.list(), hasLength(1));
   });
 
-  test('facture fournisseur groups BRs, records payments, no stock impact',
+  test('facture fournisseur groups BRs, no stock and no money impact',
       () async {
     final br1 = await newBr(fournisseurA, 2);
     final br2 = await newBr(fournisseurA, 3);
@@ -124,7 +125,6 @@ void main() {
       dateEcheance: DateTime.now(),
       lines: lines,
       brIds: [br1, br2],
-      paiements: [DocumentPaiement(date: DateTime.now(), montant: 200)],
     );
 
     expect(await balance.getStock(productId, depotId), 5);
@@ -133,11 +133,9 @@ void main() {
     expect(saved.facture.totalTtc, closeTo(600, 0.001));
     expect(saved.brs.map((b) => b.id), [br1, br2]);
     expect(saved.lines.map((l) => l.bonReceptionId), [br1, br2]);
-    expect(saved.paiements.single.montant, 200);
     expect(await factures.availableBrsForFournisseur(fournisseurA), isEmpty);
     final row = (await factures.list()).single;
     expect(row.brNumeros, hasLength(2));
-    expect(row.resteAPayer, closeTo(400, 0.001));
 
     await expectLater(brs.delete(br1), throwsStateError);
     expect((await brs.getById(br1))!.factureNumero, saved.facture.numero);
@@ -146,7 +144,71 @@ void main() {
     expect(await factures.availableBrsForFournisseur(fournisseurA), hasLength(2));
   });
 
-  test('BR of another supplier and overpayment are refused', () async {
+  test('BR carries the supplier payment, so deleting the facture keeps it',
+      () async {
+    final brId = await brs.save(
+      fournisseurId: fournisseurA,
+      date: DateTime.now(),
+      lines: [line(4)], // 480 TTC, the helper line carries 20 % TVA
+      paiements: [DocumentPaiement(date: DateTime.now(), montant: 150)],
+    );
+
+    final doc = await brs.getById(brId);
+    expect(doc!.br.estPayee, isFalse);
+    expect(doc.paiements.single.montant, 150);
+    expect(doc.paiements.single.mode, ModePaiement.especes);
+    expect((await brs.list()).single.resteAPayer, closeTo(330, 0.001));
+
+    // Paying the rest flips estPayee, like a settled BL.
+    await brs.save(
+      id: brId,
+      fournisseurId: fournisseurA,
+      date: DateTime.now(),
+      lines: [line(4)],
+      paiements: [DocumentPaiement(date: DateTime.now(), montant: 480)],
+    );
+    final settled = await brs.getById(brId);
+    expect(settled!.br.estPayee, isTrue);
+    expect((await brs.list()).single.resteAPayer, 0);
+
+    // Invoicing does not touch the money: it lives on the BR now.
+    final factureId = await factures.save(
+      fournisseurId: fournisseurA,
+      date: DateTime.now(),
+      dateEcheance: DateTime.now(),
+      lines: await factures.loadBrLines(brId),
+      brIds: [brId],
+    );
+    await factures.delete(factureId);
+    expect((await brs.getById(brId))!.paiements.single.montant, 480);
+
+    await brs.delete(brId);
+    expect(await db.select(db.paiementsFournisseurs).get(), isEmpty);
+  });
+
+  test('a BR cannot be overpaid and deleting it takes its payments with it',
+      () async {
+    await expectLater(
+      brs.save(
+        fournisseurId: fournisseurA,
+        date: DateTime.now(),
+        lines: [line(1)], // 120 TTC
+        paiements: [DocumentPaiement(date: DateTime.now(), montant: 500)],
+      ),
+      throwsStateError,
+    );
+
+    final brId = await brs.save(
+      fournisseurId: fournisseurA,
+      date: DateTime.now(),
+      lines: [line(1)],
+      paiements: [DocumentPaiement(date: DateTime.now(), montant: 120)],
+    );
+    await brs.delete(brId);
+    expect(await db.select(db.paiementsFournisseurs).get(), isEmpty);
+  });
+
+  test('BR of another supplier is refused on a supplier facture', () async {
     final brB = await newBr(fournisseurB, 1);
     await expectLater(
       factures.save(
@@ -155,17 +217,6 @@ void main() {
         dateEcheance: DateTime.now(),
         lines: await factures.loadBrLines(brB),
         brIds: [brB],
-      ),
-      throwsStateError,
-    );
-    await expectLater(
-      factures.save(
-        fournisseurId: fournisseurB,
-        date: DateTime.now(),
-        dateEcheance: DateTime.now(),
-        lines: await factures.loadBrLines(brB),
-        brIds: [brB],
-        paiements: [DocumentPaiement(date: DateTime.now(), montant: 500)],
       ),
       throwsStateError,
     );

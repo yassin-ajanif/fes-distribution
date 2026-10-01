@@ -1,7 +1,9 @@
 import 'package:drift/drift.dart';
+import 'package:fes_distribution/business/enums/mode_paiement.dart';
 import 'package:fes_distribution/business/helpers/document_totals.dart';
 import 'package:fes_distribution/business/models/bon_reception_list_item.dart';
 import 'package:fes_distribution/business/models/document_line.dart';
+import 'package:fes_distribution/business/models/document_paiement.dart';
 import 'package:fes_distribution/business/services/stock/parametres/document_number_service.dart';
 import 'package:fes_distribution/business/services/stock/stock/stock_location_service.dart';
 import 'package:fes_distribution/business/services/stock/stock/stock_movement_service.dart';
@@ -10,6 +12,10 @@ import 'package:fes_distribution/db/app_database.dart';
 /// Bon de réception = goods received from a supplier. Stock always enters the
 /// default depot (Peinture `SyncBonReceptionStockAsync`); BR lines have no
 /// remise. Invoiced later on a facture fournisseur.
+///
+/// The BR is also where the debt lives: payments to the supplier are recorded
+/// here, mirroring the ventes side where they sit on the BL. The facture
+/// fournisseur only groups BRs and carries no money of its own.
 class BonReceptionService {
   BonReceptionService(
     this._db,
@@ -67,12 +73,22 @@ class BonReceptionService {
             .get();
     final factureMap = {for (final f in factures) f.id: f.numero};
 
+    final paiements = await (_db.select(_db.paiementsFournisseurs)
+          ..where((p) => p.bonReceptionId.isIn(docs.map((d) => d.id).toList())))
+        .get();
+    final paidByBr = <int, double>{};
+    for (final p in paiements) {
+      paidByBr[p.bonReceptionId] =
+          (paidByBr[p.bonReceptionId] ?? 0) + p.montant;
+    }
+
     return [
       for (final d in docs)
         BonReceptionListItem(
           br: d,
           fournisseurNom: tiersMap[d.fournisseurId] ?? '?',
           factureNumero: factureMap[d.factureFournisseurId],
+          montantPaye: paidByBr[d.id] ?? 0,
         ),
     ];
   }
@@ -81,6 +97,7 @@ class BonReceptionService {
       ({
         BonsReceptionData br,
         List<DocumentLine> lines,
+        List<DocumentPaiement> paiements,
         String? factureNumero,
       })?> getById(int id) async {
     final br = await (_db.select(_db.bonsReception)
@@ -105,6 +122,14 @@ class BonReceptionService {
             .get();
     final productMap = {for (final p in products) p.id: p};
 
+    final paiementRows = await (_db.select(_db.paiementsFournisseurs)
+          ..where((p) => p.bonReceptionId.equals(id))
+          ..orderBy([
+            (p) => OrderingTerm.desc(p.date),
+            (p) => OrderingTerm.desc(p.id),
+          ]))
+        .get();
+
     return (
       br: br,
       lines: [
@@ -118,18 +143,28 @@ class BonReceptionService {
             tauxTva: l.tauxTVA,
           ),
       ],
+      paiements: [
+        for (final p in paiementRows)
+          DocumentPaiement(
+            date: p.date,
+            montant: p.montant,
+            mode: ModePaiement.fromCode(p.mode),
+            reference: p.reference,
+          ),
+      ],
       factureNumero: facture?.numero,
     );
   }
 
-  /// Creates or updates the BR with its lines, then syncs the default depot
-  /// stock and product purchase prices. Returns the BR id.
+  /// Creates or updates the BR with its lines and payments, then syncs the
+  /// default depot stock and product purchase prices. Returns the BR id.
   Future<int> save({
     int? id,
     required int fournisseurId,
     required DateTime date,
     String note = '',
     required List<DocumentLine> lines,
+    List<DocumentPaiement> paiements = const [],
     int? createdByUserId,
   }) async {
     if (fournisseurId <= 0) throw StateError('Sélectionnez un fournisseur.');
@@ -147,9 +182,20 @@ class BonReceptionService {
     if (DocumentTotals.isEffectivelyZero(ttc)) {
       throw StateError('Le total TTC ne peut pas être nul.');
     }
+    if (paiements.any((p) => p.montant <= 0)) {
+      throw StateError('Le montant doit être supérieur à 0.');
+    }
+    final totalPaye = paiements.fold<double>(0, (s, p) => s + p.montant);
+    if (DocumentTotals.paymentsExceedTtc(ttc, totalPaye)) {
+      throw StateError(
+        'La somme des paiements (${totalPaye.toStringAsFixed(2)} TTC) ne peut pas '
+        'dépasser le total du BR (${ttc.toStringAsFixed(2)} TTC).',
+      );
+    }
 
     return _db.transaction(() async {
       final now = DateTime.now().toUtc();
+      final estPayee = _computeEstPayee(ttc, paiements);
       late int brId;
       late String numero;
 
@@ -160,6 +206,7 @@ class BonReceptionService {
                 numero: numero,
                 fournisseurId: fournisseurId,
                 date: date,
+                estPayee: Value(estPayee),
                 totalTtc: Value(ttc),
                 note: Value(note.trim()),
                 createdAt: now,
@@ -178,6 +225,7 @@ class BonReceptionService {
           BonsReceptionCompanion(
             fournisseurId: Value(fournisseurId),
             date: Value(date),
+            estPayee: Value(estPayee),
             totalTtc: Value(ttc),
             note: Value(note.trim()),
             updatedAt: Value(now),
@@ -185,6 +233,9 @@ class BonReceptionService {
         );
         await (_db.delete(_db.bonReceptionLignes)
               ..where((l) => l.bRId.equals(id)))
+            .go();
+        await (_db.delete(_db.paiementsFournisseurs)
+              ..where((p) => p.bonReceptionId.equals(id)))
             .go();
       }
 
@@ -197,6 +248,21 @@ class BonReceptionService {
                 quantiteRecue: line.quantite,
                 prixUnitaireHT: line.prixUnitaireHt,
                 tauxTVA: Value(line.tauxTva),
+                createdAt: now,
+                updatedAt: now,
+                createdByUserId: Value(createdByUserId),
+              ),
+            );
+      }
+
+      for (final p in paiements) {
+        await _db.into(_db.paiementsFournisseurs).insert(
+              PaiementsFournisseursCompanion.insert(
+                bonReceptionId: brId,
+                date: p.date,
+                montant: p.montant,
+                mode: Value(p.mode.code),
+                reference: Value(p.reference.trim()),
                 createdAt: now,
                 updatedAt: now,
                 createdByUserId: Value(createdByUserId),
@@ -251,7 +317,18 @@ class BonReceptionService {
 
       await (_db.delete(_db.bonReceptionLignes)..where((l) => l.bRId.equals(id)))
           .go();
+      await (_db.delete(_db.paiementsFournisseurs)
+            ..where((p) => p.bonReceptionId.equals(id)))
+          .go();
       await (_db.delete(_db.bonsReception)..where((b) => b.id.equals(id))).go();
     });
+  }
+
+  /// Credit payments do not count as paid (Peinture `SyncEstPayee`).
+  static bool _computeEstPayee(double ttc, List<DocumentPaiement> paiements) {
+    final paid = paiements
+        .where((p) => p.mode != ModePaiement.credit)
+        .fold<double>(0, (s, p) => s + p.montant);
+    return ttc > 0 && paid >= ttc - DocumentTotals.paiementTtcTolerance;
   }
 }

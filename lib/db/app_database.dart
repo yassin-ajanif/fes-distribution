@@ -1,4 +1,5 @@
 import 'package:drift/drift.dart';
+import 'package:meta/meta.dart';
 
 import 'connection.dart';
 import 'db_seeder.dart';
@@ -47,7 +48,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? openConnection());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -57,7 +58,7 @@ class AppDatabase extends _$AppDatabase {
           await DbSeeder.seed(this);
         },
         onUpgrade: (m, from, to) async {
-          // Future migrations go here.
+          if (from < 2) await _migrateSupplierPaymentsToBr();
         },
         beforeOpen: (details) async {
           if (!details.wasCreated) {
@@ -65,6 +66,67 @@ class AppDatabase extends _$AppDatabase {
           }
         },
       );
+
+  /// Supplier payments move from the facture fournisseur to the bon de
+  /// réception, mirroring the ventes side where a payment hangs off the BL.
+  ///
+  /// A payment cannot be mapped back to a specific BR when its facture grouped
+  /// several, so each one is attached to that facture's oldest BR: supplier
+  /// totals are preserved exactly, only the per-BR split is approximate. A
+  /// payment whose facture had no BR behind it (a facture of free catalog
+  /// lines) has nowhere to go and is dropped.
+  @visibleForTesting
+  Future<void> migrateSupplierPaymentsToBrForTest() =>
+      _migrateSupplierPaymentsToBr();
+
+  Future<void> _migrateSupplierPaymentsToBr() async {
+    await customStatement(
+      'ALTER TABLE BonsReception ADD COLUMN est_payee INTEGER NOT NULL DEFAULT 0',
+    );
+
+    await customStatement('''
+      CREATE TABLE PaiementsFournisseurs_new (
+        id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+        bon_reception_id INTEGER NOT NULL
+          REFERENCES BonsReception (id) ON DELETE CASCADE,
+        date INTEGER NOT NULL,
+        montant REAL NOT NULL,
+        mode INTEGER NOT NULL DEFAULT 0,
+        reference TEXT NOT NULL DEFAULT '',
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL,
+        created_by_user_id INTEGER NULL
+      )
+    ''');
+
+    await customStatement('''
+      INSERT INTO PaiementsFournisseurs_new (
+        id, bon_reception_id, date, montant, mode, reference,
+        created_at, updated_at, created_by_user_id
+      )
+      SELECT
+        p.id,
+        (
+          SELECT MIN(l.bon_reception_id)
+          FROM FactureFournisseurLignes l
+          WHERE l.facture_fournisseur_id = p.facture_fournisseur_id
+            AND l.bon_reception_id IS NOT NULL
+        ),
+        p.date, p.montant, p.mode, p.reference,
+        p.created_at, p.updated_at, p.created_by_user_id
+      FROM PaiementsFournisseurs p
+      WHERE EXISTS (
+        SELECT 1 FROM FactureFournisseurLignes l
+        WHERE l.facture_fournisseur_id = p.facture_fournisseur_id
+          AND l.bon_reception_id IS NOT NULL
+      )
+    ''');
+
+    await customStatement('DROP TABLE PaiementsFournisseurs');
+    await customStatement(
+      'ALTER TABLE PaiementsFournisseurs_new RENAME TO PaiementsFournisseurs',
+    );
+  }
 
   Future<void> _createCustomIndexesAndConstraints() async {
     await customStatement('''

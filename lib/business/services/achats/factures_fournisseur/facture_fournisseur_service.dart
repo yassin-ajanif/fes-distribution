@@ -1,8 +1,6 @@
 import 'package:drift/drift.dart';
-import 'package:fes_distribution/business/enums/mode_paiement.dart';
 import 'package:fes_distribution/business/helpers/document_totals.dart';
 import 'package:fes_distribution/business/models/document_line.dart';
-import 'package:fes_distribution/business/models/document_paiement.dart';
 import 'package:fes_distribution/business/models/facture_fournisseur_list_item.dart';
 import 'package:fes_distribution/business/models/linked_document.dart';
 import 'package:fes_distribution/business/services/stock/parametres/document_number_service.dart';
@@ -10,7 +8,8 @@ import 'package:fes_distribution/db/app_database.dart';
 
 /// Supplier invoice. Groups one or more BRs of the same supplier (each BR can
 /// be invoiced once) and/or free catalog lines. No stock impact — stock
-/// already entered the depot on the BR. Supplier payments are recorded here.
+/// already entered the depot on the BR, and no money either: supplier payments
+/// are recorded on the BRs themselves.
 class FactureFournisseurService {
   FactureFournisseurService(this._db, this._numbers);
 
@@ -67,22 +66,12 @@ class FactureFournisseurService {
       brsByFacture.putIfAbsent(b.factureFournisseurId!, () => []).add(b.numero);
     }
 
-    final paiements = await (_db.select(_db.paiementsFournisseurs)
-          ..where((p) => p.factureFournisseurId.isIn(ids)))
-        .get();
-    final paidByFacture = <int, double>{};
-    for (final p in paiements) {
-      paidByFacture[p.factureFournisseurId] =
-          (paidByFacture[p.factureFournisseurId] ?? 0) + p.montant;
-    }
-
     return [
       for (final f in docs)
         FactureFournisseurListItem(
           facture: f,
           fournisseurNom: tiersMap[f.fournisseurId] ?? '?',
           brNumeros: brsByFacture[f.id] ?? const [],
-          montantPaye: paidByFacture[f.id] ?? 0,
         ),
     ];
   }
@@ -92,7 +81,6 @@ class FactureFournisseurService {
         FacturesFournisseur facture,
         List<DocumentLine> lines,
         List<LinkedDocument> brs,
-        List<DocumentPaiement> paiements,
       })?> getById(int id) async {
     final facture = await (_db.select(_db.facturesFournisseurs)
           ..where((f) => f.id.equals(id)))
@@ -109,13 +97,6 @@ class FactureFournisseurService {
           ..orderBy([
             (b) => OrderingTerm.asc(b.date),
             (b) => OrderingTerm.asc(b.numero),
-          ]))
-        .get();
-    final paiementRows = await (_db.select(_db.paiementsFournisseurs)
-          ..where((p) => p.factureFournisseurId.equals(id))
-          ..orderBy([
-            (p) => OrderingTerm.desc(p.date),
-            (p) => OrderingTerm.desc(p.id),
           ]))
         .get();
 
@@ -135,15 +116,6 @@ class FactureFournisseurService {
           ),
       ],
       brs: brRows.map(_toLinkedDocument).toList(),
-      paiements: [
-        for (final p in paiementRows)
-          DocumentPaiement(
-            date: p.date,
-            montant: p.montant,
-            mode: ModePaiement.fromCode(p.mode),
-            reference: p.reference,
-          ),
-      ],
     );
   }
 
@@ -195,8 +167,11 @@ class FactureFournisseurService {
     ];
   }
 
-  /// Creates or updates the facture with its lines and payments, and links
-  /// exactly [brIds] to it. Returns the facture id.
+  /// Creates or updates the facture with its lines, and links exactly [brIds]
+  /// to it. Returns the facture id.
+  ///
+  /// No payments here: they live on the BRs, like the BL on the ventes side.
+  /// [estPayee] stays a manual marker, as on `FactureClient`.
   Future<int> save({
     int? id,
     required int fournisseurId,
@@ -207,7 +182,6 @@ class FactureFournisseurService {
     String note = '',
     required List<DocumentLine> lines,
     List<int> brIds = const [],
-    List<DocumentPaiement> paiements = const [],
     int? createdByUserId,
   }) async {
     if (fournisseurId <= 0) throw StateError('Sélectionnez un fournisseur.');
@@ -227,16 +201,6 @@ class FactureFournisseurService {
             .totalTtc;
     if (DocumentTotals.isEffectivelyZero(ttc)) {
       throw StateError('Le total TTC ne peut pas être nul.');
-    }
-    if (paiements.any((p) => p.montant <= 0)) {
-      throw StateError('Le montant doit être supérieur à 0.');
-    }
-    final totalPaye = paiements.fold<double>(0, (s, p) => s + p.montant);
-    if (DocumentTotals.paymentsExceedTtc(ttc, totalPaye)) {
-      throw StateError(
-        'La somme des paiements (${totalPaye.toStringAsFixed(2)} TTC) ne peut pas '
-        'dépasser le total de la facture (${ttc.toStringAsFixed(2)} TTC).',
-      );
     }
 
     final linkedIds = brIds.toSet();
@@ -280,9 +244,6 @@ class FactureFournisseurService {
         await (_db.delete(_db.factureFournisseurLignes)
               ..where((l) => l.factureFournisseurId.equals(id)))
             .go();
-        await (_db.delete(_db.paiementsFournisseurs)
-              ..where((p) => p.factureFournisseurId.equals(id)))
-            .go();
       }
 
       for (final line in validLines) {
@@ -298,21 +259,6 @@ class FactureFournisseurService {
                 prixUnitaireHT: line.prixUnitaireHt,
                 remise: Value(line.remise),
                 tauxTVA: Value(line.tauxTva),
-                createdAt: now,
-                updatedAt: now,
-                createdByUserId: Value(createdByUserId),
-              ),
-            );
-      }
-
-      for (final p in paiements) {
-        await _db.into(_db.paiementsFournisseurs).insert(
-              PaiementsFournisseursCompanion.insert(
-                factureFournisseurId: factureId,
-                date: p.date,
-                montant: p.montant,
-                mode: Value(p.mode.code),
-                reference: Value(p.reference.trim()),
                 createdAt: now,
                 updatedAt: now,
                 createdByUserId: Value(createdByUserId),
@@ -337,15 +283,13 @@ class FactureFournisseurService {
     });
   }
 
-  /// Deletes the facture with its lines and payments, and frees its BRs.
+  /// Deletes the facture with its lines and frees its BRs. The BRs keep their
+  /// own payments, which now live on them.
   Future<void> delete(int id) async {
     await _db.transaction(() async {
       await (_db.update(_db.bonsReception)
             ..where((b) => b.factureFournisseurId.equals(id)))
           .write(const BonsReceptionCompanion(factureFournisseurId: Value(null)));
-      await (_db.delete(_db.paiementsFournisseurs)
-            ..where((p) => p.factureFournisseurId.equals(id)))
-          .go();
       await (_db.delete(_db.factureFournisseurLignes)
             ..where((l) => l.factureFournisseurId.equals(id)))
           .go();
