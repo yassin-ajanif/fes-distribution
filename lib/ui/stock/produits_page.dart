@@ -24,7 +24,9 @@ class _ProduitsPageState extends ConsumerState<ProduitsPage> {
 
   final _searchController = TextEditingController();
   List<Produit> _produits = [];
-  Map<int, double> _stockDepots = {};
+  List<StockLocation> _locations = [];
+  int? _locationId;
+  Map<int, double> _stock = {};
   bool _loading = true;
   bool _loadingMore = false;
   bool _hasMore = true;
@@ -51,14 +53,19 @@ class _ProduitsPageState extends ConsumerState<ProduitsPage> {
       _loadingMore = false;
     });
     try {
+      final (locations, locationId) = await _resolveLocations();
       final produits = await ref
           .read(produitServiceProvider)
           .listCatalog(search: _searchController.text, limit: requested);
-      final totals = await _loadStockTotals();
+      final stock = await ref
+          .read(stockBalanceServiceProvider)
+          .getAllStocksAtLocation(locationId);
       if (!mounted) return;
       setState(() {
+        _locations = locations;
+        _locationId = locationId;
         _produits = produits;
-        _stockDepots = totals;
+        _stock = stock;
         _offset = produits.length;
         _hasMore = produits.length == requested;
         _loading = false;
@@ -106,17 +113,49 @@ class _ProduitsPageState extends ConsumerState<ProduitsPage> {
     }
   }
 
-  Future<Map<int, double>> _loadStockTotals() async {
-    final depots = await ref
-        .read(stockLocationServiceProvider)
-        .getActivePhysicalLocations();
-    final balance = ref.read(stockBalanceServiceProvider);
-    final totals = <int, double>{};
-    for (final depot in depots) {
-      final stocks = await balance.getAllStocksAtLocation(depot.id);
-      stocks.forEach((id, qty) => totals[id] = (totals[id] ?? 0) + qty);
+  /// Returns the active locations and the one currently selected, falling back
+  /// to the default depot ("stock principal") when nothing valid is set.
+  Future<(List<StockLocation>, int)> _resolveLocations() async {
+    final service = ref.read(stockLocationServiceProvider);
+    var locations = await service.getActiveLocations();
+    var locationId = _locationId;
+    if (locationId == null || !locations.any((l) => l.id == locationId)) {
+      final depot = await service.getOrCreateDefaultDepot();
+      locationId = depot.id;
+      // The default depot can be inactive, in which case it is absent from the
+      // active list; adding it back keeps the dropdown's value present exactly
+      // once (DropdownButtonFormField asserts on that).
+      if (!locations.any((l) => l.id == depot.id)) {
+        locations = [...locations, depot];
+      }
     }
-    return totals;
+    return (locations, locationId);
+  }
+
+  /// Switches the stock column without re-reading the product list, so the
+  /// loaded pages and scroll position are kept.
+  Future<void> _switchLocation(int locationId) async {
+    setState(() => _locationId = locationId);
+    try {
+      final stock = await ref
+          .read(stockBalanceServiceProvider)
+          .getAllStocksAtLocation(locationId);
+      if (!mounted) return;
+      setState(() => _stock = stock);
+    } catch (e) {
+      if (mounted) {
+        await showErrorDialog(
+          context,
+          title: context.s.menuProduits,
+          message: '$e',
+        );
+      }
+    }
+  }
+
+  String _locationLabel(StockLocation l) {
+    final s = context.s;
+    return '${l.nom} (${l.isVirtual ? s.locationVirtual : s.locationPhysical})';
   }
 
   /// Re-reads the range already loaded so that returning from an edit keeps
@@ -153,7 +192,30 @@ class _ProduitsPageState extends ConsumerState<ProduitsPage> {
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+            child: DropdownButtonFormField<int>(
+              key: ValueKey('loc-$_locationId-${_locations.length}'),
+              initialValue: _locationId,
+              isExpanded: true,
+              decoration: InputDecoration(
+                labelText: s.stockLocation,
+                prefixIcon: const Icon(Icons.warehouse_outlined),
+              ),
+              items: [
+                for (final l in _locations)
+                  DropdownMenuItem(
+                    value: l.id,
+                    child: Text(_locationLabel(l)),
+                  ),
+              ],
+              onChanged: (v) {
+                if (v == null) return;
+                _switchLocation(v);
+              },
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
@@ -183,7 +245,7 @@ class _ProduitsPageState extends ConsumerState<ProduitsPage> {
                   )
                 : _ProduitGrid(
                     produits: _produits,
-                    stock: _stockDepots,
+                    stock: _stock,
                     hasMore: _hasMore,
                     loadingMore: _loadingMore,
                     onLoadMore: _loadMore,
