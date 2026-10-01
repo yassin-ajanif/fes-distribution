@@ -42,8 +42,9 @@ class _ProduitsPageState extends ConsumerState<ProduitsPage> {
       final produits = await ref
           .read(produitServiceProvider)
           .listCatalog(search: _searchController.text);
-      final depots =
-          await ref.read(stockLocationServiceProvider).getActivePhysicalLocations();
+      final depots = await ref
+          .read(stockLocationServiceProvider)
+          .getActivePhysicalLocations();
       final balance = ref.read(stockBalanceServiceProvider);
       final totals = <int, double>{};
       for (final depot in depots) {
@@ -59,7 +60,11 @@ class _ProduitsPageState extends ConsumerState<ProduitsPage> {
     } catch (e) {
       if (mounted) {
         setState(() => _loading = false);
-        await showErrorDialog(context, title: context.s.menuProduits, message: '$e');
+        await showErrorDialog(
+          context,
+          title: context.s.menuProduits,
+          message: '$e',
+        );
       }
     }
   }
@@ -112,24 +117,18 @@ class _ProduitsPageState extends ConsumerState<ProduitsPage> {
             child: _loading
                 ? LoadingView(message: s.loading)
                 : _produits.isEmpty
-                    ? Center(
-                        child: Text(
-                          s.emptyProduits,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(color: AppColors.muted),
-                        ),
-                      )
-                    : isMobile(context)
-                        ? _MobileList(
-                            produits: _produits,
-                            stock: _stockDepots,
-                            onTap: (p) => _open('/stock/produits/${p.id}'),
-                          )
-                        : _DesktopTable(
-                            produits: _produits,
-                            stock: _stockDepots,
-                            onTap: (p) => _open('/stock/produits/${p.id}'),
-                          ),
+                ? Center(
+                    child: Text(
+                      s.emptyProduits,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: AppColors.muted),
+                    ),
+                  )
+                : _ProduitGrid(
+                    produits: _produits,
+                    stock: _stockDepots,
+                    onTap: (p) => _open('/stock/produits/${p.id}'),
+                  ),
           ),
         ],
       ),
@@ -137,8 +136,8 @@ class _ProduitsPageState extends ConsumerState<ProduitsPage> {
   }
 }
 
-class _MobileList extends StatelessWidget {
-  const _MobileList({
+class _ProduitGrid extends StatelessWidget {
+  const _ProduitGrid({
     required this.produits,
     required this.stock,
     required this.onTap,
@@ -150,114 +149,169 @@ class _MobileList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final s = context.s;
-    return ListView.separated(
+    return GridView.builder(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 88),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: produitGridColumns(context),
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+        childAspectRatio: 0.76,
+      ),
       itemCount: produits.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 8),
       itemBuilder: (context, index) {
         final p = produits[index];
-        final qty = stock[p.id] ?? 0;
-        final low = p.stockMinimum > 0 && qty < p.stockMinimum;
-        return Card(
-          child: ListTile(
-            onTap: () => onTap(p),
-            leading: CircleAvatar(
-              backgroundColor: AppColors.brandSoft,
-              child: Icon(
-                p.actif ? Icons.inventory_2 : Icons.block,
-                color: p.actif ? AppColors.brand : AppColors.muted,
-              ),
-            ),
-            title: Text(
-              p.designation,
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                color: p.actif ? null : AppColors.muted,
-              ),
-            ),
-            subtitle: Text(
-              '${p.reference} · ${formatMoney(p.prixVenteHT)}'
-              '${p.actif ? '' : ' · ${s.inactive}'}',
-            ),
-            trailing: Text(
-              '${formatQty(qty)} ${p.unite}',
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                color: low ? AppColors.danger : AppColors.brand,
-              ),
-            ),
-          ),
+        return _ProduitCard(
+          produit: p,
+          qty: stock[p.id] ?? 0,
+          onTap: () => onTap(p),
         );
       },
     );
   }
 }
 
-class _DesktopTable extends StatelessWidget {
-  const _DesktopTable({
-    required this.produits,
-    required this.stock,
+class _ProduitCard extends StatelessWidget {
+  const _ProduitCard({
+    required this.produit,
+    required this.qty,
     required this.onTap,
   });
 
-  final List<Produit> produits;
-  final Map<int, double> stock;
-  final ValueChanged<Produit> onTap;
+  final Produit produit;
+  final double qty;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final s = context.s;
+    final p = produit;
+    final low = p.stockMinimum > 0 && qty < p.stockMinimum;
+
     return Card(
-      margin: const EdgeInsets.fromLTRB(16, 8, 16, 88),
+      margin: EdgeInsets.zero,
       clipBehavior: Clip.antiAlias,
-      child: SingleChildScrollView(
-        child: SizedBox(
-          width: double.infinity,
-          child: DataTable(
-            showCheckboxColumn: false,
-            headingRowColor: WidgetStateProperty.all(AppColors.brandSoft),
-            columns: [
-              DataColumn(label: Text(s.fieldReference)),
-              DataColumn(label: Text(s.fieldDesignation)),
-              DataColumn(label: Text(s.fieldUnite)),
-              DataColumn(label: Text(s.fieldPrixAchat), numeric: true),
-              DataColumn(label: Text(s.fieldPrixVente), numeric: true),
-              DataColumn(label: Text(s.stockDepots), numeric: true),
-              DataColumn(label: Text(s.fieldActif)),
-            ],
-            rows: [
-              for (final p in produits)
-                DataRow(
-                  onSelectChanged: (_) => onTap(p),
-                  cells: [
-                    DataCell(Text(p.reference)),
-                    DataCell(Text(p.designation)),
-                    DataCell(Text(p.unite)),
-                    DataCell(Text(formatMoney(p.prixAchatHT))),
-                    DataCell(Text(formatMoney(p.prixVenteHT))),
-                    DataCell(
-                      Text(
-                        formatQty(stock[p.id] ?? 0),
-                        style: TextStyle(
-                          color: p.stockMinimum > 0 &&
-                                  (stock[p.id] ?? 0) < p.stockMinimum
-                              ? AppColors.danger
-                              : null,
+      child: InkWell(
+        onTap: onTap,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  _CardImage(produit: p),
+                  Positioned(
+                    right: 6,
+                    top: 6,
+                    child: _StockBadge(
+                      label: '${formatQty(qty)} ${p.unite}',
+                      low: low,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    p.designation,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                      color: p.actif ? null : AppColors.muted,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          formatMoney(p.prixVenteHT),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.brand,
+                          ),
                         ),
                       ),
-                    ),
-                    DataCell(
-                      Icon(
-                        p.actif ? Icons.check_circle : Icons.block,
-                        size: 18,
-                        color: p.actif ? AppColors.brand : AppColors.muted,
-                      ),
-                    ),
-                  ],
-                ),
-            ],
-          ),
+                      if (!p.actif)
+                        Text(
+                          s.inactive,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: AppColors.muted,
+                          ),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Fills the top of a card with the product photo, falling back to an icon.
+class _CardImage extends StatelessWidget {
+  const _CardImage({required this.produit});
+
+  final Produit produit;
+
+  @override
+  Widget build(BuildContext context) {
+    final bytes = produit.imageData;
+    if (bytes == null || bytes.isEmpty) {
+      return _placeholder();
+    }
+    return Image.memory(
+      bytes,
+      fit: BoxFit.cover,
+      gaplessPlayback: true,
+      errorBuilder: (_, _, _) => _placeholder(),
+    );
+  }
+
+  Widget _placeholder() {
+    return ColoredBox(
+      color: AppColors.brandSoft,
+      child: Icon(
+        produit.actif ? Icons.inventory_2 : Icons.block,
+        size: 40,
+        color: produit.actif ? AppColors.brand : AppColors.muted,
+      ),
+    );
+  }
+}
+
+class _StockBadge extends StatelessWidget {
+  const _StockBadge({required this.label, required this.low});
+
+  final String label;
+  final bool low;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: (low ? AppColors.danger : AppColors.brand).withValues(
+          alpha: 0.92,
+        ),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
         ),
       ),
     );

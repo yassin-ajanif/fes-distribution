@@ -5,11 +5,10 @@ class AppStrings {
 
   final AppLanguage language;
 
-  String _t(String fr, String ar) =>
-      language == AppLanguage.arabic ? ar : fr;
+  String _t(String fr, String ar) => language == AppLanguage.arabic ? ar : fr;
 
   // App shell
-  String get appTitle => _t('Fes Distribution', 'Fes Distribution');
+  String get appTitle => _t('MetaGear', 'MetaGear');
   String get menuTooltip => _t('Menu', 'القائمة');
 
   // Menu sections
@@ -49,34 +48,30 @@ class AppStrings {
 
   // Settings
   String get settingsTitle => _t('Paramètres', 'الإعدادات');
-  String get settingsUiLanguage =>
-      _t('Langue de l\'interface', 'لغة الواجهة');
+  String get settingsUiLanguage => _t('Langue de l\'interface', 'لغة الواجهة');
   String get settingsLanguageHint => _t(
-        'Choisissez la langue affichée dans l\'application.',
-        'اختر اللغة المعروضة في التطبيق.',
-      );
+    'Choisissez la langue affichée dans l\'application.',
+    'اختر اللغة المعروضة في التطبيق.',
+  );
   String get settingsComingSoon => _t(
-        'Paramètres société, TVA, sauvegarde…\n'
+    'Paramètres société, TVA, sauvegarde…\n'
         'Le module paramètres sera connecté prochainement.',
-        'إعدادات الشركة، الضريبة، النسخ الاحتياطي…\n'
+    'إعدادات الشركة، الضريبة، النسخ الاحتياطي…\n'
         'سيتم ربط وحدة الإعدادات قريباً.',
-      );
+  );
   String get settingsSaved => _t('Langue enregistrée.', 'تم حفظ اللغة.');
 
   // Placeholder modules — ventes
   String get searchBl =>
       _t('Rechercher numéro, client, vendeur…', 'بحث برقم، عميل، بائع…');
-  String get emptyBl =>
-      _t('Aucun bon de livraison.', 'لا يوجد بون تسليم.');
+  String get emptyBl => _t('Aucun bon de livraison.', 'لا يوجد بون تسليم.');
 
   // Ventes — bons de livraison
   String get blNew => _t('Nouveau bon de livraison', 'بون تسليم جديد');
   String get blSaved =>
       _t('Bon de livraison enregistré.', 'تم حفظ بون التسليم.');
-  String get blFlow => _t(
-        'Véhicule du vendeur → client',
-        'سيارة البائع ← العميل',
-      );
+  String get blFlow =>
+      _t('Véhicule du vendeur → client', 'سيارة البائع ← العميل');
   String get fieldClient => _t('Client', 'العميل');
   String get newClient => _t('Nouveau client', 'عميل جديد');
   String get fieldTelephone => _t('Téléphone', 'الهاتف');
@@ -85,13 +80,13 @@ class AppStrings {
   String get fieldRemiseGlobale => _t('Remise globale (%)', 'خصم إجمالي (%)');
   String get errSelectClient => _t('Sélectionnez un client.', 'اختر عميلاً.');
   String get errRemiseGlobale => _t(
-        'La remise globale doit être entre 0 et 100 %.',
-        'يجب أن يكون الخصم الإجمالي بين 0 و 100 %.',
-      );
+    'La remise globale doit être entre 0 et 100 %.',
+    'يجب أن يكون الخصم الإجمالي بين 0 و 100 %.',
+  );
   String get noClient => _t(
-        'Aucun client. Ajoutez-en un avec le bouton +.',
-        'لا يوجد عميل. أضف عميلاً بالزر +.',
-      );
+    'Aucun client. Ajoutez-en un avec le bouton +.',
+    'لا يوجد عميل. أضف عميلاً بالزر +.',
+  );
   String get colTotalTtc => _t('Total TTC', 'المجموع مع الضريبة');
   String get colStatut => _t('Statut', 'الحالة');
   String get colReste => _t('Reste', 'الباقي');
@@ -107,15 +102,16 @@ class AppStrings {
       _t('Aucun paiement enregistré.', 'لا توجد دفعات مسجلة.');
   String get fieldMontant => _t('Montant', 'المبلغ');
   String get fieldMode => _t('Mode', 'طريقة الدفع');
-  String get fieldReference2 => _t('Référence (chèque, virement…)', 'المرجع (شيك، تحويل…)');
+  String get fieldReference2 =>
+      _t('Référence (chèque, virement…)', 'المرجع (شيك، تحويل…)');
   String get errAmount => _t(
-        'Le montant doit être supérieur à 0.',
-        'يجب أن يكون المبلغ أكبر من 0.',
-      );
+    'Le montant doit être supérieur à 0.',
+    'يجب أن يكون المبلغ أكبر من 0.',
+  );
   String errPaymentsExceed(String paid, String ttc) => _t(
-        'La somme des paiements ($paid) ne peut pas dépasser le total TTC ($ttc).',
-        'مجموع الدفعات ($paid) لا يمكن أن يتجاوز المجموع مع الضريبة ($ttc).',
-      );
+    'La somme des paiements ($paid) ne peut pas dépasser le total TTC ($ttc).',
+    'مجموع الدفعات ($paid) لا يمكن أن يتجاوز المجموع مع الضريبة ($ttc).',
+  );
   String get modeCredit => _t('Crédit', 'آجل');
   String get modeCheque => _t('Chèque', 'شيك');
   String get modeEspeces => _t('Espèces', 'نقداً');
@@ -132,20 +128,21 @@ class AppStrings {
   String get fieldEstPayee => _t('Facture payée', 'فاتورة مدفوعة');
   String get fieldBonCommandeRef =>
       _t('Réf. bon de commande client', 'مرجع طلبية العميل');
-  String get linkedBls => _t('Bons de livraison facturés', 'بون التسليم المفوتر');
+  String get linkedBls =>
+      _t('Bons de livraison facturés', 'بون التسليم المفوتر');
   String get addBls => _t('Ajouter des BL', 'إضافة بون تسليم');
   String get noLinkedBl => _t(
-        'Aucun BL lié. Ajoutez des BL ou des produits du catalogue.',
-        'لا يوجد بون تسليم مرتبط. أضف بون تسليم أو منتجات.',
-      );
+    'Aucun BL lié. Ajoutez des BL ou des produits du catalogue.',
+    'لا يوجد بون تسليم مرتبط. أضف بون تسليم أو منتجات.',
+  );
   String get noAvailableBls => _t(
-        'Aucun BL non facturé pour ce client.',
-        'لا يوجد بون تسليم غير مفوتر لهذا العميل.',
-      );
+    'Aucun BL non facturé pour ce client.',
+    'لا يوجد بون تسليم غير مفوتر لهذا العميل.',
+  );
   String get clientLockedByBl => _t(
-        'Retirez les BL liés pour changer de client.',
-        'احذف بون التسليم المرتبط لتغيير العميل.',
-      );
+    'Retirez les BL liés pour changer de client.',
+    'احذف بون التسليم المرتبط لتغيير العميل.',
+  );
   String get colEcheance => _t('Échéance', 'الاستحقاق');
   String get colBls => _t('BL', 'بون التسليم');
   String get statusEnRetard => _t('En retard', 'متأخرة');
@@ -153,8 +150,7 @@ class AppStrings {
   String blInvoiced(String numero) =>
       _t('Facturé sur $numero', 'مفوتر في $numero');
   String get actionInvoice => _t('Facturer', 'فوترة');
-  String get searchAvoir =>
-      _t('Rechercher numéro, client…', 'بحث برقم، عميل…');
+  String get searchAvoir => _t('Rechercher numéro, client…', 'بحث برقم، عميل…');
   String get emptyAvoir => _t('Aucun avoir.', 'لا يوجد بون إرجاع.');
   String get avoirNew => _t('Nouvel avoir', 'بون إرجاع جديد');
   String get avoirSaved => _t('Avoir enregistré.', 'تم حفظ بون الإرجاع.');
@@ -163,21 +159,21 @@ class AppStrings {
       _t('Facture (optionnelle)', 'الفاتورة (اختيارية)');
   String get noFactureLinked => _t('Aucune facture', 'بدون فاتورة');
   String resteSurFacture(String amount) => _t(
-        'Reste créditable sur la facture : $amount',
-        'المتبقي القابل للإرجاع على الفاتورة: $amount',
-      );
+    'Reste créditable sur la facture : $amount',
+    'المتبقي القابل للإرجاع على الفاتورة: $amount',
+  );
   String get clientLockedByFacture => _t(
-        'Retirez la facture pour changer de client.',
-        'احذف الفاتورة لتغيير العميل.',
-      );
+    'Retirez la facture pour changer de client.',
+    'احذف الفاتورة لتغيير العميل.',
+  );
   String get retourVendeurHint => _t(
-        'Les quantités retournent dans le stock (voiture) du vendeur.',
-        'تعود الكميات إلى مخزون (سيارة) البائع.',
-      );
+    'Les quantités retournent dans le stock (voiture) du vendeur.',
+    'تعود الكميات إلى مخزون (سيارة) البائع.',
+  );
   String get replaceLinesWithFacture => _t(
-        'Remplacer les lignes par celles de la facture ?',
-        'استبدال السطور بسطور الفاتورة؟',
-      );
+    'Remplacer les lignes par celles de la facture ?',
+    'استبدال السطور بسطور الفاتورة؟',
+  );
 
   // Achats — common
   String get fieldFournisseur => _t('Fournisseur', 'المورد');
@@ -185,9 +181,9 @@ class AppStrings {
   String get errSelectFournisseur =>
       _t('Sélectionnez un fournisseur.', 'اختر مورداً.');
   String get noFournisseur => _t(
-        'Aucun fournisseur. Ajoutez-en un avec le bouton +.',
-        'لا يوجد مورد. أضف مورداً بالزر +.',
-      );
+    'Aucun fournisseur. Ajoutez-en un avec le bouton +.',
+    'لا يوجد مورد. أضف مورداً بالزر +.',
+  );
   String get colFacture => _t('Facture', 'الفاتورة');
 
   // Achats — bons de réception
@@ -197,8 +193,7 @@ class AppStrings {
   String get brNew => _t('Nouveau bon de réception', 'بون استلام جديد');
   String get brSaved =>
       _t('Bon de réception enregistré.', 'تم حفظ بون الاستلام.');
-  String brFlow(String depot) =>
-      _t('Fournisseur → $depot', 'المورد ← $depot');
+  String brFlow(String depot) => _t('Fournisseur → $depot', 'المورد ← $depot');
 
   // Achats — factures fournisseur
   String get searchFactureFournisseur =>
@@ -213,17 +208,17 @@ class AppStrings {
       _t('Bons de réception facturés', 'بون الاستلام المفوتر');
   String get addBrs => _t('Ajouter des BR', 'إضافة بون استلام');
   String get noLinkedBr => _t(
-        'Aucun BR lié. Ajoutez des BR ou des produits du catalogue.',
-        'لا يوجد بون استلام مرتبط. أضف بون استلام أو منتجات.',
-      );
+    'Aucun BR lié. Ajoutez des BR ou des produits du catalogue.',
+    'لا يوجد بون استلام مرتبط. أضف بون استلام أو منتجات.',
+  );
   String get noAvailableBrs => _t(
-        'Aucun BR non facturé pour ce fournisseur.',
-        'لا يوجد بون استلام غير مفوتر لهذا المورد.',
-      );
+    'Aucun BR non facturé pour ce fournisseur.',
+    'لا يوجد بون استلام غير مفوتر لهذا المورد.',
+  );
   String get fournisseurLockedByBr => _t(
-        'Retirez les BR liés pour changer de fournisseur.',
-        'احذف بون الاستلام المرتبط لتغيير المورد.',
-      );
+    'Retirez les BR liés pour changer de fournisseur.',
+    'احذف بون الاستلام المرتبط لتغيير المورد.',
+  );
   String get colBrs => _t('BR', 'بون الاستلام');
 
   // Achats — avoirs fournisseur
@@ -239,27 +234,27 @@ class AppStrings {
   String get fieldRetourMarchandise =>
       _t('Retour de marchandise', 'إرجاع البضاعة');
   String retourMarchandiseHint(String depot) => _t(
-        'Les quantités sortent du stock « $depot ».',
-        'تخرج الكميات من مخزون « $depot ».',
-      );
+    'Les quantités sortent du stock « $depot ».',
+    'تخرج الكميات من مخزون « $depot ».',
+  );
   String get noRetourMarchandiseHint => _t(
-        'Avoir sur prix uniquement : aucun mouvement de stock.',
-        'إشعار على السعر فقط: لا توجد حركة مخزون.',
-      );
+    'Avoir sur prix uniquement : aucun mouvement de stock.',
+    'إشعار على السعر فقط: لا توجد حركة مخزون.',
+  );
 
   // Placeholder modules — stock & admin
   String get searchStock =>
       _t('Rechercher référence, désignation…', 'بحث بالمرجع، التسمية…');
   String get emptyStock => _t(
-        'Aucun produit actif.\nAjoutez des produits dans « Produits ».',
-        'لا يوجد منتج نشط.\nأضف منتجات من « المنتجات ».',
-      );
+    'Aucun produit actif.\nAjoutez des produits dans « Produits ».',
+    'لا يوجد منتج نشط.\nأضف منتجات من « المنتجات ».',
+  );
   String get searchProduits =>
       _t('Rechercher référence, code-barres…', 'بحث بالمرجع، الرمز…');
   String get emptyProduits => _t(
-        'Aucun produit.\nAppuyez sur « Nouveau » pour en ajouter.',
-        'لا يوجد منتج.\nاضغط على « جديد » لإضافة منتج.',
-      );
+    'Aucun produit.\nAppuyez sur « Nouveau » pour en ajouter.',
+    'لا يوجد منتج.\nاضغط على « جديد » لإضافة منتج.',
+  );
 
   // Produits
   String get produitNew => _t('Nouveau produit', 'منتج جديد');
@@ -281,6 +276,48 @@ class AppStrings {
   String get newCategorie => _t('Nouvelle catégorie', 'فئة جديدة');
   String get inactive => _t('Inactif', 'غير نشط');
   String get requiredField => _t('Champ obligatoire', 'حقل إلزامي');
+  // Produits — photo & code-barres
+  String get fieldPhoto => _t('Photo', 'الصورة');
+  String get photoAdd => _t('Ajouter une photo', 'إضافة صورة');
+  String get photoChange => _t('Changer la photo', 'تغيير الصورة');
+  String get photoCamera => _t('Prendre une photo', 'التقاط صورة');
+  String get photoGallery => _t('Choisir dans la galerie', 'اختيار من المعرض');
+  String get photoRemove => _t('Supprimer la photo', 'حذف الصورة');
+  String get photoNone => _t('Aucune photo', 'لا توجد صورة');
+  String get photoFromCamera => _t('Appareil photo', 'الكاميرا');
+  String get photoFromGallery => _t('Galerie', 'المعرض');
+  String get scanBarcode => _t('Scanner le code-barres', 'مسح الرمز الشريطي');
+  String get scanBarcodeTitle => _t('Scanner code-barres', 'مسح الرمز الشريطي');
+  String get scanBarcodeHint => _t(
+    'Alignez le code-barres dans le cadre.',
+    'ضع الرمز الشريطي داخل الإطار.',
+  );
+  String get scanTorch => _t('Lampe', 'الفلاش');
+  String get scanSwitchCamera => _t('Changer de caméra', 'تبديل الكاميرا');
+  String get scanUnavailable => _t('Scanner indisponible', 'الماسح غير متاح');
+  String get scanPermissionDenied => _t(
+    'Autorisez la caméra, puis relancez le scanner.',
+    'اسمح بالوصول إلى الكاميرا ثم أعد تشغيل الماسح.',
+  );
+  String get locationOnWeb => _t(
+    'Sur le web, la caméra exige une origine sécurisée (https ou localhost).',
+    'على الويب، تتطلب الكاميرا اتصالاً آمناً (https أو localhost).',
+  );
+  String scanFailed(String detail) => _t(
+    'Le scanner n\'a pas pu démarrer. Détail : $detail',
+    'تعذر تشغيل الماسح. التفاصيل: $detail',
+  );
+  String get close => _t('Fermer', 'إغلاق');
+  String get cameraDenied =>
+      _t('Accès à la caméra refusé.', 'تم رفض الوصول إلى الكاميرا.');
+  String get barcodeAlreadyUsed => _t(
+    'Ce code-barres est déjà utilisé par un autre produit.',
+    'هذا الرمز الشريطي مستعمل لمنتج آخر.',
+  );
+  String barcodeFound(String designation) =>
+      _t('Produit trouvé : $designation', 'تم العثور على المنتج: $designation');
+  String get barcodeNotFound =>
+      _t('Aucun produit pour ce code.', 'لا يوجد منتج بهذا الرمز.');
   String get invalidNumber => _t('Nombre invalide', 'رقم غير صالح');
   String get stockDepots => _t('Stock dépôts', 'مخزون المستودعات');
 
@@ -296,16 +333,14 @@ class AppStrings {
   String get adjustMotif => _t('Motif', 'السبب');
   String get adjustDone => _t('Stock ajusté.', 'تم تعديل المخزون.');
   String get currentStock => _t('Stock actuel', 'المخزون الحالي');
-  String get stockToAdd => _t(
-        'Quantité à ajouter (− pour retirer)',
-        'الكمية المضافة (− للسحب)',
-      );
+  String get stockToAdd =>
+      _t('Quantité à ajouter (− pour retirer)', 'الكمية المضافة (− للسحب)');
   String stockBeforeAfter(String before, String after) =>
       _t('Stock : $before → $after', 'المخزون: $before ← $after');
   String get stockNegative => _t(
-        'Le stock ne peut pas devenir négatif.',
-        'لا يمكن أن يصبح المخزون سالبًا.',
-      );
+    'Le stock ne peut pas devenir négatif.',
+    'لا يمكن أن يصبح المخزون سالبًا.',
+  );
   String get produitStockMotif => _t('Fiche produit', 'بطاقة المنتج');
   String get transfer => _t('Transfert', 'تحويل');
   String get transferTitle =>
@@ -313,62 +348,50 @@ class AppStrings {
   String get fromDepot => _t('Dépôt source', 'المستودع المصدر');
   String get toDepot => _t('Dépôt destination', 'المستودع الوجهة');
   String get addProduct => _t('Ajouter un produit', 'إضافة منتج');
-  String get searchProduct =>
-      _t('Rechercher un produit…', 'بحث عن منتج…');
+  String get searchProduct => _t('Rechercher un produit…', 'بحث عن منتج…');
   String get noLines => _t(
-        'Aucune ligne — ajoutez un produit ci-dessus.',
-        'لا توجد أسطر — أضف منتجاً أعلاه.',
-      );
+    'Aucune ligne — ajoutez un produit ci-dessus.',
+    'لا توجد أسطر — أضف منتجاً أعلاه.',
+  );
   String get quantity => _t('Quantité', 'الكمية');
   String get note => _t('Note', 'ملاحظة');
   String available(String qty) => _t('Dispo : $qty', 'المتوفر: $qty');
-  String get transferDone =>
-      _t('Transfert enregistré.', 'تم تسجيل التحويل.');
+  String get transferDone => _t('Transfert enregistré.', 'تم تسجيل التحويل.');
   String get needTwoDepots => _t(
-        'Créez au moins deux dépôts (page Stock → Nouveau dépôt) pour faire un transfert.',
-        'أنشئ مستودعين على الأقل (صفحة المخزون ← مستودع جديد) لإجراء تحويل.',
-      );
+    'Créez au moins deux dépôts (page Stock → Nouveau dépôt) pour faire un transfert.',
+    'أنشئ مستودعين على الأقل (صفحة المخزون ← مستودع جديد) لإجراء تحويل.',
+  );
   String shortageLine(String ref, String requested, String available) => _t(
-        '$ref — demandé $requested, dispo $available',
-        '$ref — مطلوب $requested، متوفر $available',
-      );
-  String get searchRapports =>
-      _t('Rechercher un rapport…', 'بحث عن تقرير…');
+    '$ref — demandé $requested, dispo $available',
+    '$ref — مطلوب $requested، متوفر $available',
+  );
+  String get searchRapports => _t('Rechercher un rapport…', 'بحث عن تقرير…');
   String get emptyRapports => _t(
-        'Aucun rapport disponible.\nLe module rapports sera connecté prochainement.',
-        'لا يوجد تقرير.\nسيتم ربط وحدة التقارير قريباً.',
-      );
+    'Aucun rapport disponible.\nLe module rapports sera connecté prochainement.',
+    'لا يوجد تقرير.\nسيتم ربط وحدة التقارير قريباً.',
+  );
 
   // Distribution — vendeurs
-  String get searchVendeur =>
-      _t('Rechercher un vendeur…', 'بحث عن بائع…');
-  String get emptyVendeurs =>
-      _t('Aucun vendeur trouvé.', 'لم يُعثر على بائع.');
+  String get searchVendeur => _t('Rechercher un vendeur…', 'بحث عن بائع…');
+  String get emptyVendeurs => _t('Aucun vendeur trouvé.', 'لم يُعثر على بائع.');
 
   // Distribution — bons charge / décharge
   String get searchBon => _t('Rechercher numéro, vendeur…', 'بحث برقم، بائع…');
-  String get emptyBonCharge =>
-      _t('Aucun bon de charge.', 'لا يوجد بون شحن.');
+  String get emptyBonCharge => _t('Aucun bon de charge.', 'لا يوجد بون شحن.');
   String get emptyBonDecharge =>
       _t('Aucun bon de décharge.', 'لا يوجد بون تفريغ.');
-  String deleteBonConfirm(String numero) => _t(
-        'Supprimer $numero ?',
-        'حذف $numero ؟',
-      );
+  String deleteBonConfirm(String numero) =>
+      _t('Supprimer $numero ?', 'حذف $numero ؟');
   String get bonChargeNew => _t('Nouveau bon de charge', 'بون شحن جديد');
   String get bonDechargeNew => _t('Nouveau bon de décharge', 'بون تفريغ جديد');
   String get bonChargeSaved =>
       _t('Bon de charge enregistré.', 'تم حفظ بون الشحن.');
   String get bonDechargeSaved =>
       _t('Bon de décharge enregistré.', 'تم حفظ بون التفريغ.');
-  String get bonChargeFlow => _t(
-        'Dépôt → véhicule du vendeur',
-        'المستودع ← سيارة البائع',
-      );
-  String get bonDechargeFlow => _t(
-        'Véhicule du vendeur → dépôt',
-        'سيارة البائع ← المستودع',
-      );
+  String get bonChargeFlow =>
+      _t('Dépôt → véhicule du vendeur', 'المستودع ← سيارة البائع');
+  String get bonDechargeFlow =>
+      _t('Véhicule du vendeur → dépôt', 'سيارة البائع ← المستودع');
   String get fieldVendeur => _t('Vendeur', 'البائع');
   String get fieldDepot => _t('Dépôt', 'المستودع');
   String get fieldDate => _t('Date', 'التاريخ');
@@ -388,37 +411,32 @@ class AppStrings {
   String get actionDelete => _t('Supprimer', 'حذف');
   String get filterDate => _t('Filtrer par date', 'تصفية حسب التاريخ');
   String get clearFilter => _t('Effacer le filtre', 'مسح التصفية');
-  String get errSelectVendeur =>
-      _t('Sélectionnez un vendeur.', 'اختر بائعاً.');
+  String get errSelectVendeur => _t('Sélectionnez un vendeur.', 'اختر بائعاً.');
   String get errSelectDepot => _t('Sélectionnez un dépôt.', 'اختر مستودعاً.');
   String get errNoLines => _t(
-        'Ajoutez au moins une ligne avec quantité.',
-        'أضف سطراً واحداً على الأقل بكمية.',
-      );
+    'Ajoutez au moins une ligne avec quantité.',
+    'أضف سطراً واحداً على الأقل بكمية.',
+  );
   String get errZeroTtc => _t(
-        'Le total TTC ne peut pas être nul.',
-        'لا يمكن أن يكون المجموع مع الضريبة صفراً.',
-      );
+    'Le total TTC ne peut pas être nul.',
+    'لا يمكن أن يكون المجموع مع الضريبة صفراً.',
+  );
   String get noActiveVendeur => _t(
-        'Aucun vendeur actif. Ajoutez un vendeur dans « Vendeurs ».',
-        'لا يوجد بائع نشط. أضف بائعاً من « البائعون ».',
-      );
-  String get unloadAll =>
-      _t('Décharger tout le véhicule', 'تفريغ كل السيارة');
-  String get unloadAllEmpty => _t(
-        'Le véhicule de ce vendeur est vide.',
-        'سيارة هذا البائع فارغة.',
-      );
+    'Aucun vendeur actif. Ajoutez un vendeur dans « Vendeurs ».',
+    'لا يوجد بائع نشط. أضف بائعاً من « البائعون ».',
+  );
+  String get unloadAll => _t('Décharger tout le véhicule', 'تفريغ كل السيارة');
+  String get unloadAllEmpty =>
+      _t('Le véhicule de ce vendeur est vide.', 'سيارة هذا البائع فارغة.');
   String get unloadAllReplace => _t(
-        'Remplacer les lignes actuelles par tout le stock du véhicule ?',
-        'استبدال الأسطر الحالية بكل مخزون السيارة؟',
-      );
+    'Remplacer les lignes actuelles par tout le stock du véhicule ?',
+    'استبدال الأسطر الحالية بكل مخزون السيارة؟',
+  );
 
   // Stock shortage dialog
-  String get stockShortageTitle =>
-      _t('Stock insuffisant', 'مخزون غير كافٍ');
+  String get stockShortageTitle => _t('Stock insuffisant', 'مخزون غير كافٍ');
   String stockShortageMessage(List<String> lines) => _t(
-        'Certains produits n\'ont pas assez de stock disponible :\n\n${lines.join('\n')}\n\nContinuer quand même ?',
-        'بعض المنتجات لا تتوفر بكمية كافية:\n\n${lines.join('\n')}\n\nالمتابعة على أي حال؟',
-      );
+    'Certains produits n\'ont pas assez de stock disponible :\n\n${lines.join('\n')}\n\nContinuer quand même ?',
+    'بعض المنتجات لا تتوفر بكمية كافية:\n\n${lines.join('\n')}\n\nالمتابعة على أي حال؟',
+  );
 }

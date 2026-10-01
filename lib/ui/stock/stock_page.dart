@@ -42,10 +42,18 @@ class _StockPageState extends ConsumerState<StockPage> {
     setState(() => _loading = true);
     try {
       final locationService = ref.read(stockLocationServiceProvider);
-      final locations = await locationService.getActiveLocations();
+      var locations = await locationService.getActiveLocations();
       var locationId = _locationId;
       if (locationId == null || !locations.any((l) => l.id == locationId)) {
-        locationId = (await locationService.getOrCreateDefaultDepot()).id;
+        final depot = await locationService.getOrCreateDefaultDepot();
+        locationId = depot.id;
+        // The default depot may be inactive (the lookup ignores `actif`), in
+        // which case `getActiveLocations` above does not contain it. Adding it
+        // back keeps the dropdown's value backed by exactly one item, which
+        // DropdownButtonFormField asserts on.
+        if (!locations.any((l) => l.id == depot.id)) {
+          locations = [...locations, depot];
+        }
       }
       final produits = await ref
           .read(produitServiceProvider)

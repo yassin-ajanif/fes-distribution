@@ -13,7 +13,10 @@ class ProduitService {
   Future<List<Produit>> listCatalog({String? search}) =>
       _list(search: search, activeOnly: false);
 
-  Future<List<Produit>> _list({String? search, required bool activeOnly}) async {
+  Future<List<Produit>> _list({
+    String? search,
+    required bool activeOnly,
+  }) async {
     final query = _db.select(_db.produits);
     Expression<bool> predicate = activeOnly
         ? _db.produits.actif.equals(true)
@@ -23,8 +26,8 @@ class ProduitService {
       final t = search.trim().toLowerCase();
       final searchPredicate =
           _db.produits.reference.lower().like('%$t%') |
-              _db.produits.designation.lower().like('%$t%') |
-              _db.produits.codeBarre.lower().like('%$t%');
+          _db.produits.designation.lower().like('%$t%') |
+          _db.produits.codeBarre.lower().like('%$t%');
       predicate = predicate & searchPredicate;
     }
 
@@ -33,14 +36,33 @@ class ProduitService {
     return rows;
   }
 
-  Future<Produit?> getById(int id) =>
-      (_db.select(_db.produits)..where((p) => p.id.equals(id)))
-          .getSingleOrNull();
+  Future<Produit?> getById(int id) => (_db.select(
+    _db.produits,
+  )..where((p) => p.id.equals(id))).getSingleOrNull();
+
+  /// Resolves a scanned barcode to a product. Falls back to an exact
+  /// reference match so a printed reference barcode still lands on the
+  /// right product.
+  Future<Produit?> findByCodeBarre(String code) async {
+    final trimmed = code.trim();
+    if (trimmed.isEmpty) return null;
+
+    final byCode = await (_db.select(
+      _db.produits,
+    )..where((p) => p.codeBarre.equals(trimmed))).getSingleOrNull();
+    if (byCode != null) return byCode;
+
+    return (_db.select(
+      _db.produits,
+    )..where((p) => p.reference.equals(trimmed))).getSingleOrNull();
+  }
 
   Future<int> create(ProduitInput input, {int? createdByUserId}) async {
     await _validateUnique(input, excludeId: null);
     final now = DateTime.now().toUtc();
-    return _db.into(_db.produits).insert(
+    return _db
+        .into(_db.produits)
+        .insert(
           ProduitsCompanion.insert(
             reference: input.reference.trim(),
             codeBarre: Value(_trimOrNull(input.codeBarre)),
@@ -51,6 +73,7 @@ class ProduitService {
             tauxTVA: Value(input.tauxTVA),
             stockMinimum: Value(input.stockMinimum),
             categorieId: Value(input.categorieId),
+            imageData: Value(input.imageData),
             actif: Value(input.actif),
             createdAt: now,
             updatedAt: now,
@@ -66,21 +89,29 @@ class ProduitService {
       throw StateError('Produit introuvable.');
     }
 
+    // `imageData` is only written when the caller actually supplies bytes or
+    // explicitly asks to clear the photo. Without this, every save would wipe
+    // the stored image because the field defaults to null.
     await (_db.update(_db.produits)..where((p) => p.id.equals(id))).write(
-          ProduitsCompanion(
-            reference: Value(input.reference.trim()),
-            codeBarre: Value(_trimOrNull(input.codeBarre)),
-            designation: Value(input.designation.trim()),
-            unite: Value(_normalizeUnite(input.unite)),
-            prixAchatHT: Value(input.prixAchatHT),
-            prixVenteHT: Value(input.prixVenteHT),
-            tauxTVA: Value(input.tauxTVA),
-            stockMinimum: Value(input.stockMinimum),
-            categorieId: Value(input.categorieId),
-            actif: Value(input.actif),
-            updatedAt: Value(DateTime.now().toUtc()),
-          ),
-        );
+      ProduitsCompanion(
+        reference: Value(input.reference.trim()),
+        codeBarre: Value(_trimOrNull(input.codeBarre)),
+        designation: Value(input.designation.trim()),
+        unite: Value(_normalizeUnite(input.unite)),
+        prixAchatHT: Value(input.prixAchatHT),
+        prixVenteHT: Value(input.prixVenteHT),
+        tauxTVA: Value(input.tauxTVA),
+        stockMinimum: Value(input.stockMinimum),
+        categorieId: Value(input.categorieId),
+        imageData: input.clearImage
+            ? const Value(null)
+            : input.imageData != null
+            ? Value(input.imageData)
+            : const Value.absent(),
+        actif: Value(input.actif),
+        updatedAt: Value(DateTime.now().toUtc()),
+      ),
+    );
   }
 
   Future<void> deactivate(int id) async {
@@ -90,14 +121,17 @@ class ProduitService {
     }
 
     await (_db.update(_db.produits)..where((p) => p.id.equals(id))).write(
-          ProduitsCompanion(
-            actif: const Value(false),
-            updatedAt: Value(DateTime.now().toUtc()),
-          ),
-        );
+      ProduitsCompanion(
+        actif: const Value(false),
+        updatedAt: Value(DateTime.now().toUtc()),
+      ),
+    );
   }
 
-  Future<void> _validateUnique(ProduitInput input, {required int? excludeId}) async {
+  Future<void> _validateUnique(
+    ProduitInput input, {
+    required int? excludeId,
+  }) async {
     final ref = input.reference.trim();
     final code = _trimOrNull(input.codeBarre);
     final designation = input.designation.trim();

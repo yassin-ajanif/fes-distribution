@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 class ProduitInput {
   const ProduitInput({
     required this.reference,
@@ -9,6 +11,8 @@ class ProduitInput {
     this.tauxTVA = 20,
     this.stockMinimum = 0,
     this.categorieId,
+    this.imageData,
+    this.clearImage = false,
     this.actif = true,
   });
 
@@ -21,5 +25,13 @@ class ProduitInput {
   final double tauxTVA;
   final double stockMinimum;
   final int? categorieId;
+
+  /// New photo bytes to store. When null on an update, the existing photo is
+  /// left untouched.
+  final Uint8List? imageData;
+
+  /// Set to drop the stored photo. Takes precedence over [imageData].
+  final bool clearImage;
+
   final bool actif;
 }

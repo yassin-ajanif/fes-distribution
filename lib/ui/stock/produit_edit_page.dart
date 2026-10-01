@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:fes_distribution/ui/common/app_bar_save_button.dart';
 import 'package:fes_distribution/business/models/produit_input.dart';
 import 'package:fes_distribution/db/app_database.dart';
@@ -10,6 +11,7 @@ import 'package:fes_distribution/ui/common/formatters.dart';
 import 'package:fes_distribution/ui/common/loading_view.dart';
 import 'package:fes_distribution/ui/l10n/strings_scope.dart';
 import 'package:fes_distribution/ui/providers/service_providers.dart';
+import 'package:fes_distribution/ui/stock/barcode_scanner_page.dart';
 
 class ProduitEditPage extends ConsumerStatefulWidget {
   const ProduitEditPage({super.key, this.produitId});
@@ -41,6 +43,21 @@ class _ProduitEditPageState extends ConsumerState<ProduitEditPage> {
   bool _loading = true;
   bool _saving = false;
 
+  /// Bytes of a newly picked photo, waiting to be saved.
+  Uint8List? _pickedImage;
+
+  /// Photo already stored on the product, shown when nothing new was picked.
+  Uint8List? _storedImage;
+
+  /// Whether the user asked to drop the stored photo.
+  bool _clearImage = false;
+
+  final ImagePicker _picker = ImagePicker();
+
+  /// Currently displayed photo: the new pick wins over the stored one.
+  Uint8List? get _displayImage =>
+      _clearImage ? null : (_pickedImage ?? _storedImage);
+
   bool get _isNew => widget.produitId == null;
 
   @override
@@ -70,12 +87,15 @@ class _ProduitEditPageState extends ConsumerState<ProduitEditPage> {
   Future<void> _load() async {
     try {
       final categories = await ref.read(categorieServiceProvider).listAll();
-      final depots =
-          await ref.read(stockLocationServiceProvider).getActivePhysicalLocations();
+      final depots = await ref
+          .read(stockLocationServiceProvider)
+          .getActivePhysicalLocations();
       Produit? produit;
       final stockByDepot = <int, double>{};
       if (!_isNew) {
-        produit = await ref.read(produitServiceProvider).getById(widget.produitId!);
+        produit = await ref
+            .read(produitServiceProvider)
+            .getById(widget.produitId!);
         if (produit == null) throw StateError('Produit introuvable.');
         final balance = ref.read(stockBalanceServiceProvider);
         for (final d in depots) {
@@ -99,12 +119,17 @@ class _ProduitEditPageState extends ConsumerState<ProduitEditPage> {
           _stockMin.text = _num(produit.stockMinimum);
           _categorieId = produit.categorieId;
           _actif = produit.actif;
+          _storedImage = produit.imageData;
         }
         _loading = false;
       });
     } catch (e) {
       if (!mounted) return;
-      await showErrorDialog(context, title: context.s.menuProduits, message: '$e');
+      await showErrorDialog(
+        context,
+        title: context.s.menuProduits,
+        message: '$e',
+      );
       if (mounted) context.pop();
     }
   }
@@ -179,6 +204,90 @@ class _ProduitEditPageState extends ConsumerState<ProduitEditPage> {
     }
   }
 
+  Future<void> _pickImage(ImageSource source) async {
+    final s = context.s;
+    try {
+      final file = await _picker.pickImage(
+        source: source,
+        // Ask the platform picker to downscale before we even see the bytes;
+        // the service then enforces the final cap.
+        maxWidth: 1600,
+        maxHeight: 1600,
+      );
+      if (file == null) return;
+
+      final raw = await file.readAsBytes();
+      final prepared = await ref.read(produitImageServiceProvider).prepare(raw);
+      if (!mounted) return;
+      setState(() {
+        _pickedImage = prepared;
+        _clearImage = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      await showErrorDialog(context, title: s.fieldPhoto, message: '$e');
+    }
+  }
+
+  Future<void> _chooseImageSource() async {
+    final s = context.s;
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_camera_outlined),
+              title: Text(s.photoFromCamera),
+              onTap: () => Navigator.of(ctx).pop(ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: Text(s.photoFromGallery),
+              onTap: () => Navigator.of(ctx).pop(ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (source == null) return;
+    await _pickImage(source);
+  }
+
+  void _removeImage() {
+    setState(() {
+      _pickedImage = null;
+      _storedImage = null;
+      _clearImage = true;
+    });
+  }
+
+  Future<void> _scanBarcode() async {
+    final s = context.s;
+    final code = await Navigator.of(context).push<String>(
+      MaterialPageRoute(builder: (_) => const BarcodeScannerPage()),
+    );
+    if (code == null || !mounted) return;
+
+    setState(() => _codeBarre.text = code);
+
+    // If the code is already attached to a product, tell the user right away
+    // rather than letting the save fail on the uniqueness check.
+    try {
+      final existing = await ref
+          .read(produitServiceProvider)
+          .findByCodeBarre(code);
+      if (!mounted || existing == null) return;
+      if (existing.id == widget.produitId) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(s.barcodeFound(existing.designation))),
+      );
+    } catch (_) {
+      // Lookup is best-effort; saving still validates uniqueness.
+    }
+  }
+
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     final s = context.s;
@@ -193,6 +302,8 @@ class _ProduitEditPageState extends ConsumerState<ProduitEditPage> {
       tauxTVA: _parse(_tva.text) ?? 0,
       stockMinimum: _parse(_stockMin.text) ?? 0,
       categorieId: _categorieId,
+      imageData: _pickedImage,
+      clearImage: _clearImage,
       actif: _actif,
     );
 
@@ -208,7 +319,9 @@ class _ProduitEditPageState extends ConsumerState<ProduitEditPage> {
       }
       final delta = _parse(_stockToAdd.text) ?? 0;
       if (delta != 0 && _depotId != null) {
-        await ref.read(stockMovementServiceProvider).applyAdjustment(
+        await ref
+            .read(stockMovementServiceProvider)
+            .applyAdjustment(
               produitId: produitId,
               locationId: _depotId!,
               delta: delta,
@@ -216,9 +329,8 @@ class _ProduitEditPageState extends ConsumerState<ProduitEditPage> {
             );
       }
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(s.produitSaved)),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(s.produitSaved)));
       context.pop();
     } catch (e) {
       if (mounted) {
@@ -251,10 +363,7 @@ class _ProduitEditPageState extends ConsumerState<ProduitEditPage> {
         ),
         title: Text(_isNew ? s.produitNew : _designation.text),
         actions: [
-          AppBarSaveButton(
-            onPressed: _loading ? null : _save,
-            saving: _saving,
-          ),
+          AppBarSaveButton(onPressed: _loading ? null : _save, saving: _saving),
         ],
       ),
       body: _loading
@@ -265,24 +374,45 @@ class _ProduitEditPageState extends ConsumerState<ProduitEditPage> {
                 padding: const EdgeInsets.all(16),
                 children: [
                   _Section(
+                    title: s.fieldPhoto,
+                    children: [
+                      _PhotoField(
+                        image: _displayImage,
+                        onPick: _loading ? null : _chooseImageSource,
+                        onRemove: _displayImage == null ? null : _removeImage,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  _Section(
                     title: s.sectionIdentification,
                     children: [
                       TextFormField(
                         controller: _reference,
-                        decoration: InputDecoration(labelText: '${s.fieldReference} *'),
+                        decoration: InputDecoration(
+                          labelText: '${s.fieldReference} *',
+                        ),
                         validator: _required,
                         textInputAction: TextInputAction.next,
                       ),
                       TextFormField(
                         controller: _designation,
-                        decoration:
-                            InputDecoration(labelText: '${s.fieldDesignation} *'),
+                        decoration: InputDecoration(
+                          labelText: '${s.fieldDesignation} *',
+                        ),
                         validator: _required,
                         textInputAction: TextInputAction.next,
                       ),
                       TextFormField(
                         controller: _codeBarre,
-                        decoration: InputDecoration(labelText: s.fieldCodeBarre),
+                        decoration: InputDecoration(
+                          labelText: s.fieldCodeBarre,
+                          suffixIcon: IconButton(
+                            tooltip: s.scanBarcode,
+                            icon: const Icon(Icons.qr_code_scanner),
+                            onPressed: _loading ? null : _scanBarcode,
+                          ),
+                        ),
                         textInputAction: TextInputAction.next,
                       ),
                       TextFormField(
@@ -294,8 +424,9 @@ class _ProduitEditPageState extends ConsumerState<ProduitEditPage> {
                           Expanded(
                             child: DropdownButtonFormField<int?>(
                               initialValue: _categorieId,
-                              decoration:
-                                  InputDecoration(labelText: s.fieldCategorie),
+                              decoration: InputDecoration(
+                                labelText: s.fieldCategorie,
+                              ),
                               items: [
                                 DropdownMenuItem<int?>(
                                   value: null,
@@ -307,7 +438,8 @@ class _ProduitEditPageState extends ConsumerState<ProduitEditPage> {
                                     child: Text(c.nom),
                                   ),
                               ],
-                              onChanged: (v) => setState(() => _categorieId = v),
+                              onChanged: (v) =>
+                                  setState(() => _categorieId = v),
                             ),
                           ),
                           const SizedBox(width: 8),
@@ -380,7 +512,9 @@ class _ProduitEditPageState extends ConsumerState<ProduitEditPage> {
                             signed: true,
                           ),
                           inputFormatters: [
-                            FilteringTextInputFormatter.allow(RegExp(r'[0-9.,\-]')),
+                            FilteringTextInputFormatter.allow(
+                              RegExp(r'[0-9.,\-]'),
+                            ),
                           ],
                           autovalidateMode: AutovalidateMode.onUserInteraction,
                           validator: _validateStockToAdd,
@@ -389,10 +523,15 @@ class _ProduitEditPageState extends ConsumerState<ProduitEditPage> {
                           valueListenable: _stockToAdd,
                           builder: (context, _, _) {
                             final before = _currentDepotStock;
-                            final after = before + (_parse(_stockToAdd.text) ?? 0);
+                            final after =
+                                before + (_parse(_stockToAdd.text) ?? 0);
                             return Text(
-                              s.stockBeforeAfter(formatQty(before), formatQty(after)),
-                              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                              s.stockBeforeAfter(
+                                formatQty(before),
+                                formatQty(after),
+                              ),
+                              style: Theme.of(context).textTheme.titleSmall
+                                  ?.copyWith(
                                     color: after < 0
                                         ? Theme.of(context).colorScheme.error
                                         : null,
@@ -418,7 +557,6 @@ class _ProduitEditPageState extends ConsumerState<ProduitEditPage> {
 
 class _Section extends StatelessWidget {
   const _Section({required this.title, required this.children});
-
   final String title;
   final List<Widget> children;
 
@@ -432,9 +570,7 @@ class _Section extends StatelessWidget {
           children: [
             Text(
               title,
-              style: Theme.of(context)
-                  .textTheme
-                  .titleMedium
+              style: Theme.of(context).textTheme.titleMedium
                   ?.copyWith(fontWeight: FontWeight.w600),
             ),
             for (final child in children) ...[
@@ -444,6 +580,72 @@ class _Section extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Photo preview with add/replace and remove actions.
+class _PhotoField extends StatelessWidget {
+  const _PhotoField({
+    required this.image,
+    required this.onPick,
+    required this.onRemove,
+  });
+
+  final Uint8List? image;
+  final VoidCallback? onPick;
+  final VoidCallback? onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.s;
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            width: 120,
+            height: 120,
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+            child: image == null
+                ? Icon(
+                    Icons.image_outlined,
+                    size: 40,
+                    color: Theme.of(context).colorScheme.outline,
+                  )
+                : Image.memory(
+                    image!,
+                    fit: BoxFit.cover,
+                    gaplessPlayback: true,
+                    errorBuilder: (_, _, _) =>
+                        const Icon(Icons.broken_image_outlined, size: 40),
+                  ),
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              FilledButton.tonalIcon(
+                onPressed: onPick,
+                icon: const Icon(Icons.add_a_photo_outlined),
+                label: Text(image == null ? s.photoAdd : s.photoChange),
+              ),
+              if (onRemove != null) ...[
+                const SizedBox(height: 8),
+                TextButton.icon(
+                  onPressed: onRemove,
+                  icon: const Icon(Icons.delete_outline),
+                  label: Text(s.photoRemove),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

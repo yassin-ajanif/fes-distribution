@@ -6,6 +6,7 @@ import 'package:fes_distribution/business/services/distribution/bons_charge/bon_
 import 'package:fes_distribution/business/services/distribution/bons_decharge/bon_decharge_service.dart';
 import 'package:fes_distribution/business/services/stock/produits/categorie_service.dart';
 import 'package:fes_distribution/business/services/stock/parametres/document_number_service.dart';
+import 'package:fes_distribution/business/services/stock/produits/produit_image_service.dart';
 import 'package:fes_distribution/business/services/stock/produits/produit_service.dart';
 import 'package:fes_distribution/business/services/stock/stock/stock_balance_service.dart';
 import 'package:fes_distribution/business/services/stock/stock/stock_location_service.dart';
@@ -50,6 +51,10 @@ final userServiceProvider = Provider(
 
 final produitServiceProvider = Provider(
   (ref) => ProduitService(ref.watch(databaseProvider)),
+);
+
+final produitImageServiceProvider = Provider(
+  (ref) => const ProduitImageService(),
 );
 
 final categorieServiceProvider = Provider(
