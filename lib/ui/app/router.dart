@@ -6,6 +6,8 @@ import 'package:fes_distribution/ui/personnel/bon_charge_list_page.dart';
 import 'package:fes_distribution/ui/personnel/bon_decharge_edit_page.dart';
 import 'package:fes_distribution/ui/personnel/bon_decharge_list_page.dart';
 import 'package:fes_distribution/ui/personnel/vendeur_detail_page.dart';
+import 'package:fes_distribution/ui/achats/supplier_balance_detail_page.dart';
+import 'package:fes_distribution/ui/achats/supplier_balance_page.dart';
 import 'package:fes_distribution/ui/avoir_fournisseur/avoir_fournisseur_edit_page.dart';
 import 'package:fes_distribution/ui/avoir_fournisseur/avoir_fournisseur_list_page.dart';
 import 'package:fes_distribution/ui/facturation/avoir_edit_page.dart';
@@ -256,6 +258,22 @@ GoRouter createRouter() {
                 builder: (context, state) {
                   final id = int.parse(state.pathParameters['id']!);
                   return AvoirFournisseurEditPage(avoirId: id);
+                },
+              ),
+            ],
+          ),
+          GoRoute(
+            path: '/achats/solde-fournisseurs',
+            pageBuilder: (context, state) => const NoTransitionPage(
+              child: SupplierBalancePage(),
+            ),
+            routes: [
+              GoRoute(
+                path: ':id',
+                parentNavigatorKey: _rootNavigatorKey,
+                builder: (context, state) {
+                  final id = int.parse(state.pathParameters['id']!);
+                  return SupplierBalanceDetailPage(fournisseurId: id);
                 },
               ),
             ],

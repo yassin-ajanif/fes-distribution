@@ -56,6 +56,7 @@ class AppMenu {
       '/achats/bons-reception',
       '/achats/factures-fournisseur',
       '/achats/avoirs-fournisseur',
+      '/achats/solde-fournisseurs',
     ],
     [
       '/stock/produits',
@@ -138,6 +139,12 @@ class AppMenu {
               icon: Icons.undo_outlined,
               selectedIcon: Icons.undo,
               route: '/achats/avoirs-fournisseur',
+            ),
+            AppMenuItem(
+              label: strings.menuSoldeFournisseurs,
+              icon: Icons.account_balance_wallet_outlined,
+              selectedIcon: Icons.account_balance_wallet,
+              route: '/achats/solde-fournisseurs',
             ),
           ],
         ),

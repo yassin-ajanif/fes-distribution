@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fes_distribution/business/services/achats/avoirs_fournisseur/avoir_fournisseur_service.dart';
 import 'package:fes_distribution/business/services/achats/bons_reception/bon_reception_service.dart';
+import 'package:fes_distribution/business/services/achats/solde_fournisseur/supplier_balance_service.dart';
 import 'package:fes_distribution/business/services/achats/factures_fournisseur/facture_fournisseur_service.dart';
 import 'package:fes_distribution/business/services/distribution/bons_charge/bon_charge_service.dart';
 import 'package:fes_distribution/business/services/distribution/bons_decharge/bon_decharge_service.dart';
@@ -110,6 +111,10 @@ final factureServiceProvider = Provider(
 
 final clientBalanceServiceProvider = Provider(
   (ref) => ClientBalanceService(ref.watch(databaseProvider)),
+);
+
+final supplierBalanceServiceProvider = Provider(
+  (ref) => SupplierBalanceService(ref.watch(databaseProvider)),
 );
 
 final bonDechargeServiceProvider = Provider(

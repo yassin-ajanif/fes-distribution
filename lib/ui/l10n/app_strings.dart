@@ -273,6 +273,24 @@ class AppStrings {
   String get balanceSettled => _t('Soldé', 'مسدد');
   String get balanceDetails => _t('Détail des livraisons', 'تفصيل التسليمات');
 
+  // Solde fournisseurs
+  String get menuSoldeFournisseurs =>
+      _t('Solde fournisseurs', 'أرصدة الموردين');
+  String get searchFournisseurs =>
+      _t('Rechercher un fournisseur…', 'بحث عن مورد…');
+  String get filterAllFournisseurs =>
+      _t('Tous les fournisseurs', 'كل الموردين');
+  String get totalAPayer => _t('Total à payer', 'المجموع المستحق للموردين');
+  String get emptyFournisseursSolde => _t(
+    'Aucun fournisseur à payer.',
+    'لا يوجد مورد للفاتورة.',
+  );
+  String get balanceReceived => _t('Reçu', 'تم الاستلام');
+  String get balancePendingBr => _t('BR non facturés', 'بون استلام غير مفوتر');
+  String get supplierDocumentsLabel =>
+      _t('Factures & bons de réception', 'الفواتير وبون الاستلام');
+  String supplierDocumentCount(int n) => _t('$n document(s)', '$n مستند');
+
   // Produits
   String get produitNew => _t('Nouveau produit', 'منتج جديد');
   String get produitSaved => _t('Produit enregistré.', 'تم حفظ المنتج.');
