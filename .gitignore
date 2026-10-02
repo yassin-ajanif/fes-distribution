@@ -76,3 +76,9 @@ $RECYCLE.BIN/
 .env.*
 *.pfx
 secrets.json
+
+# Android release signing — never commit these. Losing the keystore means the
+# installed app can no longer be updated without wiping its local database.
+android/key.properties
+*.jks
+*.keystore

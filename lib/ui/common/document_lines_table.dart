@@ -16,7 +16,12 @@ double parseQty(String text) =>
 /// [editablePrice] lets the user type the unit price (purchase documents).
 /// [images] = product photos by product id (see [productImagesById]); adds a
 /// photo button per line that opens the image. Null or empty hides it.
-class DocumentLinesTable extends StatelessWidget {
+///
+/// Desktop renders the full grid. On phones each line collapses to a compact
+/// header (photo, name, line TTC, expand arrow) and the editable fields only
+/// appear once the line is expanded, so a long document is scannable without
+/// scrolling through every field.
+class DocumentLinesTable extends StatefulWidget {
   const DocumentLinesTable({
     super.key,
     required this.lines,
@@ -34,16 +39,45 @@ class DocumentLinesTable extends StatelessWidget {
   final bool editablePrice;
   final Map<int, Uint8List>? images;
 
+  @override
+  State<DocumentLinesTable> createState() => _DocumentLinesTableState();
+}
+
+class _DocumentLinesTableState extends State<DocumentLinesTable> {
+  /// Expanded lines, keyed by [DocumentLine.key] rather than index: removing
+  /// a line shifts every index after it, the key does not.
+  final Set<String> _expanded = {};
+
+  List<DocumentLine> get lines => widget.lines;
+  Map<int, double>? get available => widget.available;
+  bool get editablePrice => widget.editablePrice;
+  Map<int, Uint8List>? get images => widget.images;
+  void Function(int index, DocumentLine line) get onChanged =>
+      widget.onChanged;
+  void Function(int index) get onRemoveAt => widget.onRemoveAt;
+
   bool get _showImages => images != null && images!.isNotEmpty;
 
-  Widget? _imageCell(DocumentLine l) {
-    if (!_showImages) return null;
-    return ProductImageButton(
-      reference: l.reference,
-      designation: l.designation,
-      bytes: images![l.produitId],
-    );
+  bool _isExpanded(DocumentLine l) => _expanded.contains(l.key);
+
+  void _toggle(DocumentLine l) => setState(() {
+    if (!_expanded.remove(l.key)) _expanded.add(l.key);
+  });
+
+  @override
+  void didUpdateWidget(covariant DocumentLinesTable oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Forget lines that are gone, otherwise re-adding a product would come
+    // back already expanded.
+    final keys = {for (final l in lines) l.key};
+    _expanded.removeWhere((k) => !keys.contains(k));
   }
+
+  Widget _imageCell(DocumentLine l) => ProductImageButton(
+    reference: l.reference,
+    designation: l.designation,
+    bytes: images![l.produitId],
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -80,98 +114,166 @@ class DocumentLinesTable extends StatelessWidget {
   }
 
   Widget _buildMobile(BuildContext context) {
-    final s = context.s;
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         for (var i = 0; i < lines.length; i++)
           Card(
             key: ValueKey('line-${lines[i].key}'),
             margin: const EdgeInsets.only(bottom: 8),
+            clipBehavior: Clip.antiAlias,
+            child: Column(
+              children: [
+                _buildMobileHeader(context, i),
+                if (_isExpanded(lines[i])) _buildMobileDetails(context, i),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+
+  /// Compact summary row: photo, product name, line TTC and the expand arrow.
+  /// Tapping anywhere but the photo or the delete button toggles the detail
+  /// panel, so a whole delivery can be reviewed without scrolling per line.
+  Widget _buildMobileHeader(BuildContext context, int i) {
+    final s = context.s;
+    final l = lines[i];
+    final short = _isShort(l);
+    final expanded = _isExpanded(l);
+    final bytes = images?[l.produitId];
+
+    return Row(
+      children: [
+        Expanded(
+          child: InkWell(
+            onTap: () => _toggle(l),
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(12, 4, 4, 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              padding: const EdgeInsetsDirectional.only(start: 12, end: 4),
+              child: Row(
                 children: [
-                  Row(
-                    children: [
-                      if (_showImages) ...[
-                        _imageCell(lines[i])!,
-                        const SizedBox(width: 4),
-                      ],
-                      Expanded(
-                        child: Text(
-                          lines[i].reference,
+                  if (bytes != null) ...[
+                    InkWell(
+                      onTap: () => showProductImageDialog(
+                        context,
+                        reference: l.reference,
+                        designation: l.designation,
+                        bytes: bytes,
+                      ),
+                      borderRadius: BorderRadius.circular(6),
+                      child: ProductThumbnail(bytes: bytes),
+                    ),
+                    const SizedBox(width: 10),
+                  ],
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          l.designation.isEmpty ? l.reference : l.designation,
+                          maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(fontWeight: FontWeight.w600),
                         ),
-                      ),
-                      if (available != null)
-                        Flexible(child: _dispoText(lines[i], label: s.available)),
-                      IconButton(
-                        icon: const Icon(Icons.delete_outline, size: 20),
-                        onPressed: () => onRemoveAt(i),
-                      ),
-                    ],
-                  ),
-                  Padding(
-                    padding: const EdgeInsetsDirectional.only(end: 8),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _TextCell(
-                          value: lines[i].designation,
-                          decoration: InputDecoration(
-                            labelText: s.fieldDesignation,
-                            isDense: true,
+                        Text(
+                          _mobileSubtitle(context, l),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: short ? AppColors.danger : AppColors.muted,
+                            fontSize: Theme.of(
+                              context,
+                            ).textTheme.bodySmall?.fontSize,
                           ),
-                          onChanged: (v) =>
-                              onChanged(i, lines[i].copyWith(designation: v)),
-                        ),
-                        const SizedBox(height: 8),
-                        _QtyCell(
-                          value: lines[i].quantite,
-                          decoration: InputDecoration(
-                            labelText: s.quantity,
-                            isDense: true,
-                          ),
-                          onChanged: (q) =>
-                              onChanged(i, lines[i].copyWith(quantite: q)),
-                        ),
-                        if (editablePrice) ...[
-                          const SizedBox(height: 8),
-                          _QtyCell(
-                            value: lines[i].prixUnitaireHt,
-                            decoration: InputDecoration(
-                              labelText: s.colPuHt,
-                              isDense: true,
-                            ),
-                            onChanged: (p) => onChanged(
-                              i,
-                              lines[i].copyWith(prixUnitaireHt: p),
-                            ),
-                          ),
-                        ],
-                        const SizedBox(height: 8),
-                        Wrap(
-                          alignment: WrapAlignment.spaceBetween,
-                          spacing: 12,
-                          children: [
-                            if (!editablePrice)
-                              Text('${s.colPuHt}: ${formatMoney(lines[i].prixUnitaireHt)}'),
-                            Text(
-                              'TTC: ${formatMoney(lines[i].montantTtc)}',
-                              style: const TextStyle(fontWeight: FontWeight.w600),
-                            ),
-                          ],
                         ),
                       ],
                     ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    formatMoney(l.montantTtc),
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  IconButton(
+                    tooltip: expanded ? s.collapseLine : s.expandLine,
+                    icon: Icon(
+                      expanded ? Icons.expand_less : Icons.expand_more,
+                    ),
+                    onPressed: () => _toggle(l),
                   ),
                 ],
               ),
             ),
           ),
+        ),
+        IconButton(
+          icon: const Icon(Icons.delete_outline, size: 20),
+          onPressed: () => onRemoveAt(i),
+        ),
       ],
+    );
+  }
+
+  String _mobileSubtitle(BuildContext context, DocumentLine l) => [
+    if (l.reference.isNotEmpty) l.reference,
+    '${context.s.quantity} : ${formatQty(l.quantite)}',
+    if (available != null)
+      context.s.available(formatQty(available![l.produitId] ?? 0)),
+  ].join(' · ');
+
+  Widget _buildMobileDetails(BuildContext context, int i) {
+    final s = context.s;
+    return Padding(
+      padding: const EdgeInsetsDirectional.only(start: 12, end: 12, bottom: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Divider(height: 1),
+          const SizedBox(height: 12),
+          _TextCell(
+            value: lines[i].designation,
+            decoration: InputDecoration(
+              labelText: s.fieldDesignation,
+              isDense: true,
+            ),
+            onChanged: (v) => onChanged(i, lines[i].copyWith(designation: v)),
+          ),
+          const SizedBox(height: 8),
+          _QtyCell(
+            value: lines[i].quantite,
+            decoration: InputDecoration(labelText: s.quantity, isDense: true),
+            onChanged: (q) => onChanged(i, lines[i].copyWith(quantite: q)),
+          ),
+          if (editablePrice) ...[
+            const SizedBox(height: 8),
+            _QtyCell(
+              value: lines[i].prixUnitaireHt,
+              decoration: InputDecoration(labelText: s.colPuHt, isDense: true),
+              onChanged: (p) => onChanged(
+                i,
+                lines[i].copyWith(prixUnitaireHt: p),
+              ),
+            ),
+          ],
+          const SizedBox(height: 12),
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            spacing: 12,
+            runSpacing: 4,
+            children: [
+              if (available != null) _dispoText(lines[i], label: s.available),
+              Text('${s.colRef} : ${lines[i].reference}'),
+              if (!editablePrice)
+                Text('${s.colPuHt} : ${formatMoney(lines[i].prixUnitaireHt)}'),
+              Text(
+                'TTC : ${formatMoney(lines[i].montantTtc)}',
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -201,7 +303,7 @@ class DocumentLinesTable extends StatelessWidget {
             for (var i = 0; i < lines.length; i++)
               DataRow(
                 cells: [
-                  if (_showImages) DataCell(_imageCell(lines[i])!),
+                  if (_showImages) DataCell(_imageCell(lines[i])),
                   DataCell(Text(lines[i].reference)),
                   DataCell(
                     SizedBox(

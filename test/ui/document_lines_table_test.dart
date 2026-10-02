@@ -8,6 +8,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:fes_distribution/business/models/document_line.dart';
 import 'package:fes_distribution/db/app_database.dart';
 import 'package:fes_distribution/ui/common/document_lines_table.dart';
+import 'package:fes_distribution/ui/common/formatters.dart';
+import 'package:fes_distribution/ui/common/product_image.dart';
 import 'package:fes_distribution/ui/common/product_search_field.dart';
 import 'package:fes_distribution/ui/l10n/app_language.dart';
 import 'package:fes_distribution/ui/l10n/app_strings.dart';
@@ -22,7 +24,9 @@ final Uint8List _photo = base64Decode(
 );
 
 class _Host extends StatefulWidget {
-  const _Host();
+  const _Host({this.images});
+
+  final Map<int, Uint8List>? images;
 
   @override
   State<_Host> createState() => _HostState();
@@ -39,6 +43,7 @@ class _HostState extends State<_Host> {
     return DocumentLinesTable(
       lines: lines,
       available: const {1: 5, 2: 2},
+      images: widget.images,
       onChanged: (i, l) => setState(() => lines[i] = l),
       onRemoveAt: (i) => setState(() => lines.removeAt(i)),
     );
@@ -46,7 +51,11 @@ class _HostState extends State<_Host> {
 }
 
 void main() {
-  Future<void> pump(WidgetTester tester) async {
+  /// Phone-width host: renders the collapsible cards.
+  Future<void> pump(
+    WidgetTester tester, {
+    Map<int, Uint8List>? images,
+  }) async {
     tester.view.physicalSize = const Size(400, 900);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -55,14 +64,22 @@ void main() {
       MaterialApp(
         home: StringsScope(
           strings: AppStrings(AppLanguage.french),
-          child: const Scaffold(body: SingleChildScrollView(child: _Host())),
+          child: Scaffold(body: SingleChildScrollView(child: _Host(images: images))),
         ),
       ),
     );
   }
 
+  /// Opens the detail panel of the first line.
+  Future<void> expandFirst(WidgetTester tester) async {
+    await tester.tap(find.byIcon(Icons.expand_more).first);
+    await tester.pump();
+  }
+
   testWidgets('typing a quantity keeps the same field focused', (tester) async {
     await pump(tester);
+    await expandFirst(tester);
+
     final qty = find.widgetWithText(TextField, '1');
     await tester.tap(qty);
     await tester.enterText(qty, '1');
@@ -78,12 +95,77 @@ void main() {
 
   testWidgets('removing a line keeps the other line values', (tester) async {
     await pump(tester);
+    await expandFirst(tester);
+    await tester.tap(find.byIcon(Icons.expand_more).first);
+    await tester.pump();
     await tester.tap(find.byIcon(Icons.delete_outline).first);
     await tester.pump();
 
     expect(find.widgetWithText(TextField, 'Noir'), findsOneWidget);
     expect(find.widgetWithText(TextField, '3'), findsOneWidget);
     expect(find.widgetWithText(TextField, 'Blanc'), findsNothing);
+  });
+
+  testWidgets('a collapsed line shows photo, name, TTC and the arrow only', (
+    tester,
+  ) async {
+    await pump(tester, images: {1: _photo});
+
+    // Header summary: the photo, the designation, the line TTC.
+    expect(find.byType(ProductThumbnail), findsOneWidget);
+    expect(find.text('Blanc'), findsWidgets);
+    expect(find.text(formatMoney(10)), findsOneWidget);
+    // The editable fields stay hidden until the line is expanded.
+    expect(find.byType(TextField), findsNothing);
+    expect(find.byIcon(Icons.expand_more), findsNWidgets(2));
+
+    await expandFirst(tester);
+
+    expect(find.byType(TextField), findsWidgets);
+    expect(find.byIcon(Icons.expand_less), findsOneWidget);
+    expect(find.byIcon(Icons.expand_more), findsOneWidget);
+  });
+
+  testWidgets('the whole header row toggles the line', (tester) async {
+    await pump(tester);
+
+    expect(find.byType(TextField), findsNothing);
+    await tester.tap(find.text('Noir'));
+    await tester.pump();
+
+    expect(find.byIcon(Icons.expand_less), findsOneWidget);
+    expect(find.widgetWithText(TextField, 'Noir'), findsOneWidget);
+  });
+
+  testWidgets('the photo in the header opens the image, it does not expand', (
+    tester,
+  ) async {
+    await pump(tester, images: {1: _photo});
+
+    await tester.tap(find.byType(ProductThumbnail));
+    await tester.pumpAndSettle();
+
+    final dialog = find.byType(Dialog);
+    expect(dialog, findsOneWidget);
+    expect(
+      find.descendant(of: dialog, matching: find.text('Blanc')),
+      findsOneWidget,
+    );
+    expect(find.byType(TextField), findsNothing);
+  });
+
+  testWidgets('expansion follows the line, not its index', (tester) async {
+    await pump(tester);
+    await expandFirst(tester);
+    expect(find.byIcon(Icons.expand_less), findsOneWidget);
+    expect(find.byIcon(Icons.expand_more), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.delete_outline).at(0));
+    await tester.pump();
+
+    // The line that moves into index 0 must not inherit the open state.
+    expect(find.byIcon(Icons.expand_more), findsOneWidget);
+    expect(find.byIcon(Icons.expand_less), findsNothing);
   });
 
   testWidgets('facture lines: same product from two BLs, no Dispo', (tester) async {

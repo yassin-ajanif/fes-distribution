@@ -337,6 +337,8 @@ class AppStrings {
   // Produits — photo & code-barres
   String get fieldPhoto => _t('Photo', 'الصورة');
   String get viewPhoto => _t('Voir la photo', 'عرض الصورة');
+  String get expandLine => _t('Afficher le détail', 'عرض التفاصيل');
+  String get collapseLine => _t('Masquer le détail', 'إخفاء التفاصيل');
   String get photoAdd => _t('Ajouter une photo', 'إضافة صورة');
   String get photoChange => _t('Changer la photo', 'تغيير الصورة');
   String get photoCamera => _t('Prendre une photo', 'التقاط صورة');
