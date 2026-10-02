@@ -12,6 +12,7 @@ import 'package:fes_distribution/ui/common/document_totals_card.dart';
 import 'package:fes_distribution/ui/common/formatters.dart';
 import 'package:fes_distribution/ui/common/loading_view.dart';
 import 'package:fes_distribution/ui/common/new_tiers_dialog.dart';
+import 'package:fes_distribution/ui/common/product_image.dart';
 import 'package:fes_distribution/ui/common/product_search_card.dart';
 import 'package:fes_distribution/ui/common/tiers_label.dart';
 import 'package:fes_distribution/ui/l10n/strings_scope.dart';
@@ -308,6 +309,7 @@ class _AvoirEditPageState extends ConsumerState<AvoirEditPage> {
                 DocumentLinesTable(
                   lines: _lines,
                   editablePrice: true,
+                  images: productImagesById(_produits),
                   onChanged: (i, line) => setState(() => _lines[i] = line),
                   onRemoveAt: (i) => setState(() => _lines.removeAt(i)),
                 ),

@@ -7,7 +7,12 @@ plugins {
 android {
     namespace = "com.example.fes_distribution"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+
+    // ndkVersion is deliberately not set. Pinning it makes AGP auto-provision the
+    // ~2 GB NDK even though nothing here compiles from C/C++ source: the Flutter
+    // engine and plugins (sqlite3_flutter_libs, mobile_scanner) ship prebuilt .so
+    // files inside their AARs. A debug build does not strip debug symbols, so the
+    // NDK is not needed. Drop this line back in if a future plugin adds native code.
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

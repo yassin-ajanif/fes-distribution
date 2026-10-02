@@ -13,6 +13,8 @@ import 'package:fes_distribution/ui/common/formatters.dart';
 import 'package:fes_distribution/ui/common/linked_document_picker_dialog.dart';
 import 'package:fes_distribution/ui/common/loading_view.dart';
 import 'package:fes_distribution/ui/common/new_tiers_dialog.dart';
+import 'package:fes_distribution/ui/common/product_image.dart';
+import 'package:fes_distribution/ui/common/product_search_card.dart';
 import 'package:fes_distribution/ui/common/tiers_label.dart';
 import 'package:fes_distribution/ui/l10n/strings_scope.dart';
 import 'package:fes_distribution/ui/providers/service_providers.dart';
@@ -338,10 +340,11 @@ class _FactureEditPageState extends ConsumerState<FactureEditPage> {
                 const SizedBox(height: 16),
                 _buildBls(context),
                 const SizedBox(height: 16),
-                _buildAddProduct(context),
+                ProductSearchCard(produits: _produits, onSelected: _addProduct),
                 const SizedBox(height: 16),
                 DocumentLinesTable(
                   lines: _lines,
+                  images: productImagesById(_produits),
                   onChanged: (i, line) => setState(() => _lines[i] = line),
                   onRemoveAt: (i) => setState(() => _lines.removeAt(i)),
                 ),
@@ -500,48 +503,6 @@ class _FactureEditPageState extends ConsumerState<FactureEditPage> {
                     ),
                 ],
               ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAddProduct(BuildContext context) {
-    final s = context.s;
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(s.addProduct, style: Theme.of(context).textTheme.titleSmall),
-            const SizedBox(height: 8),
-            Autocomplete<Produit>(
-              optionsBuilder: (text) {
-                final t = text.text.toLowerCase();
-                if (t.isEmpty) return _produits.take(20);
-                return _produits.where(
-                  (p) =>
-                      p.reference.toLowerCase().contains(t) ||
-                      p.designation.toLowerCase().contains(t) ||
-                      (p.codeBarre?.toLowerCase().contains(t) ?? false),
-                );
-              },
-              displayStringForOption: (p) =>
-                  '${p.reference} — ${p.designation}',
-              onSelected: _addProduct,
-              fieldViewBuilder: (context, controller, focusNode, _) {
-                return TextField(
-                  controller: controller,
-                  focusNode: focusNode,
-                  decoration: InputDecoration(
-                    hintText: s.searchProduct,
-                    prefixIcon: const Icon(Icons.search),
-                  ),
-                  onTap: controller.clear,
-                );
-              },
-            ),
           ],
         ),
       ),

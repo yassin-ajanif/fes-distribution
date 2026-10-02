@@ -336,6 +336,7 @@ class AppStrings {
   String get requiredField => _t('Champ obligatoire', 'حقل إلزامي');
   // Produits — photo & code-barres
   String get fieldPhoto => _t('Photo', 'الصورة');
+  String get viewPhoto => _t('Voir la photo', 'عرض الصورة');
   String get photoAdd => _t('Ajouter une photo', 'إضافة صورة');
   String get photoChange => _t('Changer la photo', 'تغيير الصورة');
   String get photoCamera => _t('Prendre une photo', 'التقاط صورة');

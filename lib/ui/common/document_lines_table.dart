@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fes_distribution/business/models/document_line.dart';
 import 'package:fes_distribution/ui/common/formatters.dart';
+import 'package:fes_distribution/ui/common/product_image.dart';
 import 'package:fes_distribution/ui/common/responsive.dart';
 import 'package:fes_distribution/ui/l10n/strings_scope.dart';
 import 'package:fes_distribution/ui/theme/app_theme.dart';
@@ -13,6 +14,8 @@ double parseQty(String text) =>
 /// [available] = stock at the source location per product (shown as "Dispo");
 /// null hides the column (documents without stock impact, e.g. facture).
 /// [editablePrice] lets the user type the unit price (purchase documents).
+/// [images] = product photos by product id (see [productImagesById]); adds a
+/// photo button per line that opens the image. Null or empty hides it.
 class DocumentLinesTable extends StatelessWidget {
   const DocumentLinesTable({
     super.key,
@@ -21,6 +24,7 @@ class DocumentLinesTable extends StatelessWidget {
     required this.onRemoveAt,
     this.available,
     this.editablePrice = false,
+    this.images,
   });
 
   final List<DocumentLine> lines;
@@ -28,6 +32,18 @@ class DocumentLinesTable extends StatelessWidget {
   final void Function(int index) onRemoveAt;
   final Map<int, double>? available;
   final bool editablePrice;
+  final Map<int, Uint8List>? images;
+
+  bool get _showImages => images != null && images!.isNotEmpty;
+
+  Widget? _imageCell(DocumentLine l) {
+    if (!_showImages) return null;
+    return ProductImageButton(
+      reference: l.reference,
+      designation: l.designation,
+      bytes: images![l.produitId],
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -78,6 +94,10 @@ class DocumentLinesTable extends StatelessWidget {
                 children: [
                   Row(
                     children: [
+                      if (_showImages) ...[
+                        _imageCell(lines[i])!,
+                        const SizedBox(width: 4),
+                      ],
                       Expanded(
                         child: Text(
                           lines[i].reference,
@@ -164,6 +184,7 @@ class DocumentLinesTable extends StatelessWidget {
         child: DataTable(
           headingRowColor: WidgetStateProperty.all(AppColors.brandSoft),
           columns: [
+            if (_showImages) DataColumn(label: Text(s.fieldPhoto)),
             DataColumn(label: Text(s.colRef)),
             DataColumn(label: Text(s.fieldDesignation)),
             DataColumn(label: Text(s.colQty), numeric: true),
@@ -180,6 +201,7 @@ class DocumentLinesTable extends StatelessWidget {
             for (var i = 0; i < lines.length; i++)
               DataRow(
                 cells: [
+                  if (_showImages) DataCell(_imageCell(lines[i])!),
                   DataCell(Text(lines[i].reference)),
                   DataCell(
                     SizedBox(

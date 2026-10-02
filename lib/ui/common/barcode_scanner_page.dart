@@ -3,6 +3,21 @@ import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:fes_distribution/ui/l10n/strings_scope.dart';
 
+/// Whether a camera is reachable on this platform. `mobile_scanner` only has a
+/// camera backend on phones and browsers, so scan entry points stay hidden on
+/// desktop builds instead of crashing on a missing plugin.
+bool get scannerSupported =>
+    kIsWeb ||
+    defaultTargetPlatform == TargetPlatform.android ||
+    defaultTargetPlatform == TargetPlatform.iOS;
+
+/// Opens the camera scanner and returns the scanned payload as a `String`,
+/// or null when the user backs out.
+Future<String?> scanBarcode(BuildContext context) =>
+    Navigator.of(context).push<String>(
+      MaterialPageRoute(builder: (_) => const BarcodeScannerPage()),
+    );
+
 /// Full-screen barcode scanner. Pops with the scanned payload as a `String`,
 /// or null when the user backs out.
 class BarcodeScannerPage extends StatefulWidget {

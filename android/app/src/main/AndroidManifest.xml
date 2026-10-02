@@ -1,6 +1,29 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- mobile_scanner: barcode/camera scanning on the product page. Without
+         this the scanner page opens to a permanently black preview. -->
+    <uses-permission android:name="android.permission.CAMERA" />
+
+    <!-- image_picker: product photos taken with the device camera. -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+
+    <!-- image_picker reading files saved before Android 13 (API 32 and
+         below); ignored by newer releases. -->
+    <uses-permission
+        android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
+
+    <!-- The app is a local-first distribution tool and makes no network calls,
+         but the debug/devtools handshake needs it: without INTERNET the debug
+         build fails to attach and hot reload does not work. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- Both are optional so the app still installs on a device without a
+         camera; the scanner is simply unavailable there. -->
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
+
     <application
-        android:label="fes_distribution"
+        android:label="MetaGear"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

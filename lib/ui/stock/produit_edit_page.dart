@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:fes_distribution/ui/common/app_bar_save_button.dart';
+import 'package:fes_distribution/ui/common/barcode_scanner_page.dart';
 import 'package:fes_distribution/business/models/produit_input.dart';
 import 'package:fes_distribution/db/app_database.dart';
 import 'package:fes_distribution/ui/common/confirm_dialog.dart';
@@ -11,7 +12,6 @@ import 'package:fes_distribution/ui/common/formatters.dart';
 import 'package:fes_distribution/ui/common/loading_view.dart';
 import 'package:fes_distribution/ui/l10n/strings_scope.dart';
 import 'package:fes_distribution/ui/providers/service_providers.dart';
-import 'package:fes_distribution/ui/stock/barcode_scanner_page.dart';
 
 class ProduitEditPage extends ConsumerStatefulWidget {
   const ProduitEditPage({super.key, this.produitId});

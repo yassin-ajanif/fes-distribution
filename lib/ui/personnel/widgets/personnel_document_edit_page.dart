@@ -9,6 +9,8 @@ import 'package:fes_distribution/ui/common/app_bar_save_button.dart';
 import 'package:fes_distribution/ui/common/confirm_dialog.dart';
 import 'package:fes_distribution/ui/common/formatters.dart';
 import 'package:fes_distribution/ui/common/loading_view.dart';
+import 'package:fes_distribution/ui/common/product_image.dart';
+import 'package:fes_distribution/ui/common/product_search_card.dart';
 import 'package:fes_distribution/ui/common/tiers_label.dart';
 import 'package:fes_distribution/ui/l10n/strings_scope.dart';
 import 'package:fes_distribution/ui/common/document_lines_table.dart';
@@ -422,11 +424,24 @@ class _PersonnelDocumentEditPageState
                   ),
                 _buildHeader(context),
                 const SizedBox(height: 16),
-                _buildAddProduct(context),
+                ProductSearchCard(
+                  produits: _produits,
+                  onSelected: _addProduct,
+                  available: _available,
+                  headerActions: [
+                    if (!_isCharge)
+                      TextButton.icon(
+                        onPressed: _userId == null ? null : _unloadAll,
+                        icon: const Icon(Icons.move_down),
+                        label: Text(s.unloadAll),
+                      ),
+                  ],
+                ),
                 const SizedBox(height: 16),
                 DocumentLinesTable(
                   lines: _lines,
                   available: _available,
+                  images: productImagesById(_produits),
                   onChanged: (i, line) => setState(() => _lines[i] = line),
                   onRemoveAt: (i) => setState(() => _lines.removeAt(i)),
                 ),
@@ -520,63 +535,6 @@ class _PersonnelDocumentEditPageState
               onPressed: _pickDate,
               icon: const Icon(Icons.calendar_today, size: 18),
               label: Text('${s.fieldDate} : ${dateFormat.format(_date)}'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAddProduct(BuildContext context) {
-    final s = context.s;
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    s.addProduct,
-                    style: Theme.of(context).textTheme.titleSmall,
-                  ),
-                ),
-                if (!_isCharge)
-                  TextButton.icon(
-                    onPressed: _userId == null ? null : _unloadAll,
-                    icon: const Icon(Icons.move_down),
-                    label: Text(s.unloadAll),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Autocomplete<Produit>(
-              optionsBuilder: (text) {
-                final t = text.text.toLowerCase();
-                if (t.isEmpty) return _produits.take(20);
-                return _produits.where(
-                  (p) =>
-                      p.reference.toLowerCase().contains(t) ||
-                      p.designation.toLowerCase().contains(t) ||
-                      (p.codeBarre?.toLowerCase().contains(t) ?? false),
-                );
-              },
-              displayStringForOption: (p) =>
-                  '${p.reference} — ${p.designation} (${s.available(formatQty(_available[p.id] ?? 0))})',
-              onSelected: _addProduct,
-              fieldViewBuilder: (context, controller, focusNode, _) {
-                return TextField(
-                  controller: controller,
-                  focusNode: focusNode,
-                  decoration: InputDecoration(
-                    hintText: s.searchProduct,
-                    prefixIcon: const Icon(Icons.search),
-                  ),
-                  onTap: controller.clear,
-                );
-              },
             ),
           ],
         ),

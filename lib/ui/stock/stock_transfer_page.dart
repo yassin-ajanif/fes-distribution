@@ -7,6 +7,8 @@ import 'package:fes_distribution/db/app_database.dart';
 import 'package:fes_distribution/ui/common/confirm_dialog.dart';
 import 'package:fes_distribution/ui/common/formatters.dart';
 import 'package:fes_distribution/ui/common/loading_view.dart';
+import 'package:fes_distribution/ui/common/product_image.dart';
+import 'package:fes_distribution/ui/common/product_search_card.dart';
 import 'package:fes_distribution/ui/l10n/strings_scope.dart';
 import 'package:fes_distribution/ui/providers/service_providers.dart';
 import 'package:fes_distribution/ui/theme/app_theme.dart';
@@ -220,43 +222,7 @@ class _StockTransferPageState extends ConsumerState<StockTransferPage> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Text(s.addProduct, style: Theme.of(context).textTheme.titleSmall),
-                        const SizedBox(height: 8),
-                        Autocomplete<Produit>(
-                          optionsBuilder: (text) {
-                            final t = text.text.toLowerCase();
-                            if (t.isEmpty) return _produits.take(20);
-                            return _produits.where(
-                              (p) =>
-                                  p.reference.toLowerCase().contains(t) ||
-                                  p.designation.toLowerCase().contains(t) ||
-                                  (p.codeBarre?.toLowerCase().contains(t) ?? false),
-                            );
-                          },
-                          displayStringForOption: (p) =>
-                              '${p.reference} — ${p.designation}',
-                          onSelected: _addProduct,
-                          fieldViewBuilder: (context, controller, focusNode, _) {
-                            return TextField(
-                              controller: controller,
-                              focusNode: focusNode,
-                              decoration: InputDecoration(
-                                hintText: s.searchProduct,
-                                prefixIcon: const Icon(Icons.search),
-                              ),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+                ProductSearchCard(produits: _produits, onSelected: _addProduct),
                 const SizedBox(height: 16),
                 if (_lines.isEmpty)
                   Card(
@@ -311,6 +277,20 @@ class _LineCard extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
         child: Row(
           children: [
+            if (line.produit.imageData != null &&
+                line.produit.imageData!.isNotEmpty) ...[
+              InkWell(
+                borderRadius: BorderRadius.circular(6),
+                onTap: () => showProductImageDialog(
+                  context,
+                  reference: line.produit.reference,
+                  designation: line.produit.designation,
+                  bytes: line.produit.imageData!,
+                ),
+                child: ProductThumbnail(bytes: line.produit.imageData, size: 44),
+              ),
+              const SizedBox(width: 12),
+            ],
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

@@ -1,10 +1,25 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
+import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fes_distribution/business/models/document_line.dart';
+import 'package:fes_distribution/db/app_database.dart';
+import 'package:fes_distribution/ui/common/document_lines_table.dart';
+import 'package:fes_distribution/ui/common/product_search_field.dart';
 import 'package:fes_distribution/ui/l10n/app_language.dart';
 import 'package:fes_distribution/ui/l10n/app_strings.dart';
 import 'package:fes_distribution/ui/l10n/strings_scope.dart';
-import 'package:fes_distribution/ui/common/document_lines_table.dart';
+import 'package:fes_distribution/ui/providers/service_providers.dart';
+
+/// Smallest valid PNG (1x1 transparent) — enough for `Image.memory` to decode
+/// without pulling the image package into the test.
+final Uint8List _photo = base64Decode(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAE'
+  'hQGAhKmMIQAAAABJRU5ErkJggg==',
+);
 
 class _Host extends StatefulWidget {
   const _Host();
@@ -124,4 +139,94 @@ void main() {
     expect(changed!.prixUnitaireHt, 62.5);
     expect(changed!.bonReceptionId, 7);
   });
+
+  Future<void> pumpLines(
+    WidgetTester tester, {
+    Map<int, Uint8List>? images,
+  }) async {
+    tester.view.physicalSize = const Size(1400, 900);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    // StringsScope lives above the Navigator in the real app (see app.dart),
+    // so dialogs and overlays can read the strings. Mirror that here.
+    await tester.pumpWidget(
+      StringsScope(
+        strings: AppStrings(AppLanguage.french),
+        child: MaterialApp(
+          home: Scaffold(
+            body: DocumentLinesTable(
+              lines: [
+                DocumentLine(produitId: 1, reference: 'A', designation: 'Blanc', quantite: 2),
+                DocumentLine(produitId: 2, reference: 'B', designation: 'Noir', quantite: 3),
+              ],
+              images: images,
+              onChanged: (_, _) {},
+              onRemoveAt: (_) {},
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  testWidgets('a photo button appears only on lines that have a photo', (tester) async {
+    await pumpLines(tester, images: {1: _photo});
+
+    expect(find.byIcon(Icons.image_outlined), findsOneWidget);
+  });
+
+  testWidgets('no photo button nor column when the catalog has no photos', (tester) async {
+    await pumpLines(tester);
+
+    expect(find.byIcon(Icons.image_outlined), findsNothing);
+    expect(find.text('Photo'), findsNothing);
+  });
+
+  testWidgets('tapping the photo button opens the product image', (tester) async {
+    await pumpLines(tester, images: {1: _photo});
+
+    await tester.tap(find.byIcon(Icons.image_outlined));
+    await tester.pumpAndSettle();
+
+    final dialog = find.byType(Dialog);
+    expect(dialog, findsOneWidget);
+    expect(
+      find.descendant(of: dialog, matching: find.text('A')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: dialog, matching: find.text('Blanc')),
+      findsOneWidget,
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('product search field builds without an Autocomplete assertion', (
+    tester,
+  ) async {
+    // Autocomplete asserts focusNode and textEditingController are passed
+    // together or not at all, so the scan button must own both.
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [databaseProvider.overrideWithValue(db)],
+        child: StringsScope(
+          strings: AppStrings(AppLanguage.french),
+          child: const MaterialApp(
+            home: Scaffold(
+              body: ProductSearchField(produits: [], onSelected: _ignore),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(tester.takeException(), isNull);
+    expect(find.byType(TextField), findsOneWidget);
+  });
 }
+
+void _ignore(Produit _) {}

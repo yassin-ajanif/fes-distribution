@@ -14,6 +14,7 @@ import 'package:fes_distribution/ui/common/fournisseur_field.dart';
 import 'package:fes_distribution/ui/common/loading_view.dart';
 import 'package:fes_distribution/ui/common/new_tiers_dialog.dart';
 import 'package:fes_distribution/ui/common/paiement_dialog.dart';
+import 'package:fes_distribution/ui/common/product_image.dart';
 import 'package:fes_distribution/ui/common/product_search_card.dart';
 import 'package:fes_distribution/ui/l10n/strings_scope.dart';
 import 'package:fes_distribution/ui/providers/service_providers.dart';
@@ -266,6 +267,7 @@ class _BrEditPageState extends ConsumerState<BrEditPage> {
                 DocumentLinesTable(
                   lines: _lines,
                   editablePrice: true,
+                  images: productImagesById(_produits),
                   onChanged: (i, line) => setState(() => _lines[i] = line),
                   onRemoveAt: (i) => setState(() => _lines.removeAt(i)),
                 ),
